@@ -1,0 +1,8 @@
+{
+  "fetchedAt": "2026-10-24T19:19:23.856Z",
+  "source": "ipverse/rir-ip",
+  "counts": {
+    "gb-v4.txt": 8237,
+    "gb-v6.txt": 2036
+  }
+}
