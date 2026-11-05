@@ -1,0 +1,12 @@
+#card-pick .pick-add { margin: .8rem 0; }
+#card-pick .pick-add p { margin: 0 0 .5rem; }
+#card-pick .pick-add form { display: flex; flex-wrap: wrap; gap: .4rem; }
+#card-pick .pick-add label { display: grid; gap: .3rem; }
+#card-pick .objs li { display: grid; gap: .3rem; }
+#card-pick .objs li button { display: flex; align-items: center; gap: .6rem; width: 100%; text-align: left; }
+#card-pick .objs canvas { width: 64px; height: 48px; object-fit: cover; }
+#card-pick .objs input { width: 100%; }
+#card-pick button:focus-visible, #card-pick input:focus-visible { outline: 3px solid #ffc828; outline-offset: 2px; }
+#pickBox { align-self: start; }
+#pickMasks { touch-action: none; }
+#pickBox .pick-drag { position: absolute; border: 2px solid #ffc828; background: rgba(255, 200, 40, .12); pointer-events: none; }

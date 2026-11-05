@@ -1,0 +1,52 @@
+[
+  {
+    "package": "@sparkjsdev/spark",
+    "version": "2.2.0",
+    "registry": "https://registry.npmjs.org/@sparkjsdev/spark/-/spark-2.2.0.tgz",
+    "integrity": "sha512-wf5F2YAmPXnjm20/MgXYer9FQTXz2JOCo05HwxFkaD7Guk9rHVPIwdJ6fq0oF9ME0heMvYj+TxS6DTrucvy6KA==",
+    "path": "vendor/spark-2.2.0/spark.module.js",
+    "sha256": "d5c3b3722e4e121836b7d26f1260c2a2750973130adfce0aed97bc312b54ead7",
+    "bytes": 2881309,
+    "license": "MIT"
+  },
+  {
+    "package": "@sparkjsdev/spark",
+    "version": "2.2.0",
+    "registry": "https://registry.npmjs.org/@sparkjsdev/spark/-/spark-2.2.0.tgz",
+    "integrity": "sha512-wf5F2YAmPXnjm20/MgXYer9FQTXz2JOCo05HwxFkaD7Guk9rHVPIwdJ6fq0oF9ME0heMvYj+TxS6DTrucvy6KA==",
+    "path": "vendor/spark-2.2.0/LICENSE",
+    "sha256": "51829693e5dccd9ca1daa093991faac3aaa93238eb8fd5f5cb4130af85791d64",
+    "bytes": 1088,
+    "license": "MIT"
+  },
+  {
+    "package": "three",
+    "version": "0.180.0",
+    "registry": "https://registry.npmjs.org/three/-/three-0.180.0.tgz",
+    "integrity": "sha512-o+qycAMZrh+TsE01GqWUxUIKR1AL0S8pq7zDkYOQw8GqfX8b8VoCKYUoHbhiX5j+7hr8XsuHDVU6+gkQJQKg9w==",
+    "path": "vendor/three-0.180.0/three.module.js",
+    "sha256": "c8211c69345d2e9949dc7a8ac969380497aa0600a5a8ac6a459c8cd02dd9cb8a",
+    "bytes": 603113,
+    "license": "MIT"
+  },
+  {
+    "package": "three",
+    "version": "0.180.0",
+    "registry": "https://registry.npmjs.org/three/-/three-0.180.0.tgz",
+    "integrity": "sha512-o+qycAMZrh+TsE01GqWUxUIKR1AL0S8pq7zDkYOQw8GqfX8b8VoCKYUoHbhiX5j+7hr8XsuHDVU6+gkQJQKg9w==",
+    "path": "vendor/three-0.180.0/three.core.js",
+    "sha256": "eb077d2417f61d3e6d9264c317cabc4ea35769ed6b0ab533067292a550784c20",
+    "bytes": 1403455,
+    "license": "MIT"
+  },
+  {
+    "package": "three",
+    "version": "0.180.0",
+    "registry": "https://registry.npmjs.org/three/-/three-0.180.0.tgz",
+    "integrity": "sha512-o+qycAMZrh+TsE01GqWUxUIKR1AL0S8pq7zDkYOQw8GqfX8b8VoCKYUoHbhiX5j+7hr8XsuHDVU6+gkQJQKg9w==",
+    "path": "vendor/three-0.180.0/LICENSE",
+    "sha256": "bfe119ea4fd413f5f7ca3fcd63adb0c4a073ed39daa2fe7d3e6b769e21272601",
+    "bytes": 1081,
+    "license": "MIT"
+  }
+]

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lab — nine ways to see one clip in 3.5D</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="lab.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <div class="title">
+        <b>LAB</b>
+        <span>one grizzly clip, nine ways to hold its time at once</span>
+      </div>
+      <div class="transport">
+        <button id="play" type="button" aria-label="Play or pause">❚❚</button>
+        <input id="scrub" type="range" min="0" max="1" step="0.001" value="0" aria-label="Clip time" />
+        <output id="clock">0.00s</output>
+      </div>
+      <div class="verdict" id="verdict">measuring…</div>
+    </header>
+
+    <p class="intro">
+      After <a href="https://x.com/bilawalsidhu/status/2102391212544291072">Bilawal Sidhu's 4D deer</a>:
+      every frame of a fixed-camera clip, cut out by SAM 3.1 and lifted into 3D with Depth Anything V2,
+      so the animal is left where and when it actually was. Source:
+      <a href="https://x.com/Trail_Cams/status/2098913003991146875">@Trail_Cams</a>, 80 tracked frames.
+      The top bar drives every panel's clock; drag panels to orbit, scroll inside a panel where it says so.
+    </p>
+
+    <main class="grid">
+      <section class="panel" data-view="millipede">
+        <canvas></canvas>
+        <div class="cap"><b>01 · Millipede</b><span>The reference effect. Each frame's bear stays where it stood; the recording camera's frustum and its live frame sweep the trail.</span></div>
+      </section>
+
+      <section class="panel" data-view="direction">
+        <canvas></canvas>
+        <div class="hud" id="dirHud"></div>
+        <div class="cap"><b>02 · Scroll follows the motion</b><span>Detects whether the subject comes toward or goes away from the lens, then scrolling here flies you along its real direction of travel. <em>Scroll inside.</em></span></div>
+      </section>
+
+      <section class="panel" data-view="rotate">
+        <canvas></canvas>
+        <div class="hud" id="rotHud"></div>
+        <div class="cap"><b>03 · Rotate time into space</b><span>A rotation in the x–t plane of the video volume. 0° is the ordinary picture; 90° turns the time axis sideways, so still things streak and the bear carves a path. <em>Scroll inside · click to swap x/y.</em></span></div>
+      </section>
+
+      <section class="panel" data-view="block">
+        <canvas></canvas>
+        <div class="cap"><b>04 · Space-time block</b><span>Full-frame cut-outs stacked along t in their true positions, the empty river behind. The present slice is lit.</span></div>
+      </section>
+
+      <section class="panel" data-view="worldline">
+        <canvas></canvas>
+        <div class="cap"><b>05 · Worldline</b><span>A spacetime diagram: the ground (x, depth) is the floor, time is up. The bear's path is a tube, the present is the glowing plane slicing it.</span></div>
+      </section>
+
+      <section class="panel" data-view="timecolor">
+        <canvas></canvas>
+        <div class="cap"><b>06 · Colour is time</b><span>Every lifted point coloured by the moment it was recorded, violet to red. The current instant flashes white as it passes through.</span></div>
+      </section>
+
+      <section class="panel" data-view="slitscan">
+        <canvas></canvas>
+        <div class="cap"><b>07 · Slit-scan</b><span>Two cuts through the video cube: the column under the line over time (right), the row under the line over time (below). <em>Move over the picture.</em></span></div>
+      </section>
+
+      <section class="panel" data-view="chrono">
+        <canvas></canvas>
+        <div class="cap"><b>08 · Chronophotograph</b><span>Marey and Muybridge: the empty river with every sixth pose laid in, older poses fainter, and the poses as a strip.</span></div>
+      </section>
+
+      <section class="panel" data-view="echo">
+        <canvas></canvas>
+        <div class="cap"><b>09 · Echo</b><span>The footage playing with the last two seconds of the bear trailing behind it — the flat, real-time version of all of the above.</span></div>
+      </section>
+    </main>
+
+    <script type="importmap">
+      { "imports": { "three": "./vendor/three/build/three.module.js" } }
+    </script>
+    <script type="module" src="lab.js"></script>
+  </body>
+</html>

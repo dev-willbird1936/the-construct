@@ -1,0 +1,16 @@
+{
+  "name": "spacetime-object-volume-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@meta-sam/parser": "^0.0.12",
+    "express": "^4.19.2",
+    "multer": "^2.4.0",
+    "openai": "^4.71.0",
+    "sharp": "^0.35.4"
+  }
+}

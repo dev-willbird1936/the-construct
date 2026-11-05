@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Point cloud — a clip as a 4D trail</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="cloud.css" />
+  </head>
+  <body>
+    <canvas id="view"></canvas>
+
+    <header class="top">
+      <b>POINT CLOUD</b>
+      <span id="info">loading…</span>
+    </header>
+
+    <div class="dock">
+      <button id="play" type="button" aria-label="Play or pause">❚❚</button>
+      <input id="scrub" type="range" min="0" max="1" step="0.001" value="0" aria-label="Clip time" />
+      <output id="clock">0.00s</output>
+      <label class="ctl">window <input id="window" type="range" min="1" max="20" step="0.5" value="4" aria-label="Glow window in frames" /></label>
+      <label class="ctl"><input id="natural" type="checkbox" /> natural colour</label>
+    </div>
+    <p class="keys"><kbd>drag</kbd> orbit · <kbd>scroll</kbd> zoom · <kbd>right-drag</kbd> pan</p>
+    <div class="fail" id="fail" hidden></div>
+
+    <video id="clip" muted playsinline preload="auto" hidden></video>
+
+    <script type="importmap">
+      { "imports": { "three": "./vendor/three/build/three.module.js" } }
+    </script>
+    <script type="module" src="cloud.js"></script>
+  </body>
+</html>

@@ -1,0 +1,1514 @@
+/* ═══════════════════════════════════════════════════════════════
+   THE CONSTRUCT
+   The page is not a document. It is one room in an endless lattice,
+   so nothing scrolls and every surface is chrome laid over the render.
+   ═══════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("assets/fonts/space-grotesk-var.woff2") format("woff2-variations");
+  font-weight: 300 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("assets/fonts/jetbrains-mono-var.woff2") format("woff2-variations");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+
+  --void: #07060a;
+  --ink: #eef2fa;
+  --muted: #b9b09b;
+  --dim: #8f8672;
+
+  --line: rgba(238, 242, 250, 0.1);
+  --line-strong: rgba(238, 242, 250, 0.2);
+
+  /* the construct is lit warm; everything cold is structure */
+  --glow: #ffd9a8;
+  --glow-hot: #fff0d6;
+  --glow-soft: rgba(255, 217, 168, 0.32);
+
+  --display: "Space Grotesk", ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  /* the room does not scroll; scrolling is spent on time instead */
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--void);
+}
+
+body {
+  font-family: var(--display);
+  color: var(--ink);
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  touch-action: none;
+}
+
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; }
+::selection { background: var(--glow); color: #17120a; }
+:focus-visible { outline: 1px solid var(--glow); outline-offset: 3px; }
+
+.is-hidden { display: none !important; }
+.dim { color: var(--dim); }
+
+#latticeCanvas {
+  position: fixed;
+  inset: 0;
+  cursor: grab;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* a soft well around the edges, so the corridor falls away rather than
+   ending at the browser frame */
+.veil {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(115% 88% at 50% 50%, transparent 30%, rgba(7, 6, 10, 0.82) 100%);
+}
+
+.grain {
+  position: fixed;
+  inset: -120%;
+  pointer-events: none;
+  opacity: 0.032;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: drift 7s steps(5) infinite;
+}
+@keyframes drift {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-2%, 1%); }
+  40%  { transform: translate(1.5%, -1.5%); }
+  60%  { transform: translate(-1%, -1%); }
+  80%  { transform: translate(1%, 1.5%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ═══════════ edge bands and door signs ═══════════
+   Point into an edge band and the eye leans toward that room while its sign
+   lights; click (or tap) to go. The bands stay clear of the corners, where
+   the plaque, the map and the nav live, so reaching for them never leans. */
+
+.edge {
+  position: fixed;
+  z-index: 6;
+  display: block;
+  --charge: 0;
+}
+.edge i { display: none; }
+.edge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.45s var(--ease);
+  pointer-events: none;
+}
+.edge.is-peek::after { opacity: 0.55; }
+
+.edge-l, .edge-r { top: 18vh; bottom: 18vh; width: 9vw; min-width: 56px; }
+.edge-u, .edge-d { left: 26vw; right: 26vw; height: 9vh; min-height: 48px; }
+.edge-l { left: 0; }
+.edge-r { right: 0; }
+.edge-u { top: 0; }
+.edge-d { bottom: 0; }
+.edge-l::after { background: linear-gradient(90deg, rgba(255, 217, 168, 0.14), transparent); }
+.edge-r::after { background: linear-gradient(270deg, rgba(255, 217, 168, 0.14), transparent); }
+.edge-u::after { background: linear-gradient(180deg, rgba(255, 217, 168, 0.12), transparent); }
+.edge-d::after { background: linear-gradient(0deg, rgba(255, 217, 168, 0.12), transparent); }
+
+/* each neighbour's name, hung in the space toward it (placed per frame) */
+.doors {
+  position: fixed;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  transition: opacity 0.3s linear;
+}
+.door {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px 7px 10px;
+  border: 1px solid rgba(255, 217, 168, 0.18);
+  background: rgba(6, 5, 8, 0.66);
+  color: var(--muted);
+  font-family: var(--mono);
+  text-align: left;
+  white-space: nowrap;
+  pointer-events: auto;
+  opacity: 0.88;
+  will-change: transform;
+  transition: opacity 0.35s var(--ease), border-color 0.35s var(--ease), background 0.35s var(--ease), color 0.35s var(--ease);
+  --charge: 0;
+}
+.door[data-dx="1"] { flex-direction: row-reverse; padding: 7px 10px 7px 12px; text-align: right; }
+.door[data-dy="1"], .door[data-dy="-1"] { flex-direction: column; gap: 4px; padding: 8px 12px; text-align: center; }
+.door[data-dy="-1"] { flex-direction: column-reverse; }
+.door-text { display: grid; gap: 2px; justify-items: inherit; }
+.door[data-dx="1"] .door-text { justify-items: end; }
+.door[data-dy="1"] .door-text, .door[data-dy="-1"] .door-text { justify-items: center; }
+/* the peek: the next room's picture opens on its sign while you point at it */
+.door-thumb {
+  display: block;
+  width: 0;
+  height: 0;
+  object-fit: cover;
+  opacity: 0;
+  border: 1px solid transparent;
+  transition: width 0.4s var(--ease), height 0.4s var(--ease), opacity 0.3s var(--ease), margin 0.4s var(--ease);
+}
+.door-thumb:not([src]) { display: none; }
+.door.is-peek .door-thumb, .door:hover .door-thumb {
+  width: 132px;
+  height: 74px;
+  margin-bottom: 6px;
+  opacity: 1;
+  border-color: rgba(255, 217, 168, 0.35);
+}
+.door b { font-size: 10px; font-weight: 500; letter-spacing: 0.22em; color: var(--ink); }
+.door small { font-size: 8.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); opacity: 0.8; }
+.door i {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-top: 1px solid var(--glow);
+  border-right: 1px solid var(--glow);
+  transition: transform 0.35s var(--ease);
+}
+.door[data-dx="-1"] i { transform: rotate(-135deg); }
+.door[data-dx="1"] i { transform: rotate(45deg); }
+.door[data-dy="1"] i { transform: rotate(-45deg); }
+.door[data-dy="-1"] i { transform: rotate(135deg); }
+/* the dwell (only when edge crossing is switched on) fills under the name */
+.door::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 1px;
+  width: calc(var(--charge) * 100%);
+  background: var(--glow-hot);
+  box-shadow: 0 0 8px var(--glow);
+}
+.door[data-kind="empty"] { border-style: dashed; border-color: rgba(255, 217, 168, 0.3); }
+.door[data-kind="empty"] b { color: var(--ink); }
+.door[data-kind="empty"] small { color: var(--glow); }
+.door[data-kind="yours"] { border-color: rgba(255, 217, 168, 0.4); }
+.door[data-kind="yours"] b { color: var(--glow); }
+.door.is-peek, .door:hover, .door:focus-visible {
+  opacity: 1;
+  border-color: var(--glow);
+  background: rgba(14, 10, 6, 0.72);
+  outline: none;
+}
+.door.is-peek b, .door:hover b { color: var(--glow-hot); }
+.door[data-dx="-1"].is-peek i, .door[data-dx="-1"]:hover i { transform: translateX(-3px) rotate(-135deg); }
+.door[data-dx="1"].is-peek i, .door[data-dx="1"]:hover i { transform: translateX(3px) rotate(45deg); }
+.door[data-dy="1"].is-peek i, .door[data-dy="1"]:hover i { transform: translateY(-3px) rotate(-45deg); }
+.door[data-dy="-1"].is-peek i, .door[data-dy="-1"]:hover i { transform: translateY(3px) rotate(135deg); }
+
+/* ═══════════ hud ═══════════ */
+
+.hud {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 8;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px clamp(20px, 5vw, 54px);
+  pointer-events: none;
+  /* the walls behind are bright streaks, so the chrome carries its own shade */
+  text-shadow: 0 0 3px #000, 0 0 14px rgba(0, 0, 0, 0.9);
+}
+.hud-top { top: 0; background: linear-gradient(180deg, rgba(5, 4, 3, 0.55), transparent); }
+.hud-bottom { background: linear-gradient(0deg, rgba(5, 4, 3, 0.55), transparent); }
+.hud-bottom { bottom: 0; align-items: flex-end; }
+.hud a, .hud button { pointer-events: auto; }
+
+.mark { display: flex; align-items: center; gap: 11px; }
+.mark-glyph {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--glow);
+  opacity: 0.85;
+}
+.mark-glyph::before,
+.mark-glyph::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid var(--glow);
+  opacity: 0.5;
+}
+.mark-glyph::after {
+  inset: -5px;
+  opacity: 0.2;
+  animation: markPulse 5s var(--ease) infinite;
+}
+@keyframes markPulse {
+  0%, 100% { transform: scale(1); opacity: 0.2; }
+  50% { transform: scale(1.14); opacity: 0.05; }
+}
+
+.mark-word {
+  display: grid;
+  gap: 2px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--ink);
+}
+.mark-word em {
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+  text-transform: uppercase;
+}
+
+.coord {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.coord b { color: var(--glow); font-weight: 500; letter-spacing: 0.16em; }
+.backend-state { padding-left: 12px; border-left: 1px solid var(--line); }
+.backend-state.is-ok::before { content: "◈ "; color: var(--glow); }
+.backend-state.is-down::before { content: "◇ "; color: #d8724f; }
+
+/* the plaque names the cell you are standing in */
+.plaque { display: grid; gap: 5px; max-width: 46ch; }
+.plaque b {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  color: var(--glow);
+}
+.plaque span { font-size: 13px; line-height: 1.5; color: var(--muted); }
+
+.keys {
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+  text-align: right;
+}
+.keys kbd {
+  font: inherit;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line-strong);
+  padding-bottom: 1px;
+  margin-right: 6px;
+}
+
+/* ═══════════ the read head ═══════════ */
+
+.t-rail {
+  position: fixed;
+  z-index: 8;
+  right: clamp(20px, 5vw, 54px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+  text-shadow: 0 0 3px #000, 0 0 14px rgba(0, 0, 0, 0.9);
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.8));
+  pointer-events: auto;
+  padding: 8px 14px;
+  margin-right: -14px;
+  cursor: ns-resize;
+  touch-action: none;
+  --t: 1;
+}
+.t-rail:focus-visible { outline: 1px solid var(--glow); outline-offset: 2px; }
+.t-rail:hover .t-track, .t-rail.is-held .t-track { background: rgba(255, 217, 168, 0.35); }
+.t-rail:hover .t-track::after, .t-rail.is-held .t-track::after { left: -7px; right: -7px; height: 2px; }
+.t-label { color: var(--glow); }
+.t-track {
+  position: relative;
+  width: 1px;
+  height: min(34vh, 260px);
+  background: var(--line-strong);
+}
+.t-track i {
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  bottom: 0;
+  height: calc(var(--t) * 100%);
+  background: linear-gradient(0deg, var(--glow-soft), var(--glow));
+  transition: height 0.08s linear;
+}
+.t-track::after {
+  content: "";
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  bottom: calc(var(--t) * 100%);
+  height: 1px;
+  background: var(--glow-hot);
+  box-shadow: 0 0 9px 1px var(--glow-soft);
+  transition: bottom 0.08s linear;
+}
+.t-rail b { color: var(--muted); font-weight: 500; }
+
+/* ═══════════ your cell ═══════════
+   Chrome only appears once you are standing in the cell that holds it. */
+
+.instrument-cell {
+  position: fixed;
+  inset: 0;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  padding: clamp(70px, 12vh, 130px) clamp(70px, 11vw, 150px);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.965);
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+}
+.instrument-cell.is-live {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+.instrument-inner {
+  width: min(980px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: clamp(20px, 3vw, 34px);
+  border: 1px solid var(--line);
+  background: rgba(4, 5, 10, 0.72);
+  backdrop-filter: blur(9px);
+}
+
+.step-kicker {
+  margin: 0 0 10px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--glow);
+}
+#stepUpload h2 {
+  margin: 0 0 22px;
+  font-size: clamp(22px, 3vw, 33px);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+}
+
+.drop-zone {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 9px;
+  min-height: clamp(170px, 24vh, 230px);
+  border: 1px dashed var(--line-strong);
+  cursor: pointer;
+  transition: border-color 0.3s var(--ease), background 0.3s var(--ease);
+  perspective: 480px;
+}
+.drop-zone:hover,
+.drop-zone.is-dragging {
+  border-color: var(--glow);
+  background: rgba(255, 217, 168, 0.04);
+}
+.drop-zone input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.drop-mark {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  transform-style: preserve-3d;
+  transform: rotateX(58deg) rotateZ(45deg);
+  margin-bottom: 8px;
+}
+.drop-mark i {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--glow);
+  animation: markFan 3.4s var(--ease) infinite alternate;
+}
+.drop-mark i:nth-child(1) { --z0: 0px;   --z1: -5px;  opacity: 0.9; }
+.drop-mark i:nth-child(2) { --z0: -10px; --z1: -22px; opacity: 0.5; }
+.drop-mark i:nth-child(3) { --z0: -20px; --z1: -39px; opacity: 0.22; }
+@keyframes markFan {
+  from { transform: translateZ(var(--z0)); }
+  to { transform: translateZ(var(--z1)); }
+}
+.drop-title { font-size: 15px; font-weight: 500; }
+.drop-zone small {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.sample-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 0;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.link-btn {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 2px;
+  transition: color 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+.link-btn:hover { color: var(--glow); border-color: var(--glow); }
+
+/* ── frame picker ── */
+
+#stepFrame {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  gap: clamp(18px, 2.4vw, 30px);
+  align-items: start;
+}
+
+.frame-canvas-wrap {
+  position: relative;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  background: #04050a;
+}
+#previewCanvas, #hoverCanvas { display: block; width: 100%; height: auto; }
+#hoverCanvas { position: absolute; inset: 0; cursor: crosshair; }
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -2px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glow), transparent);
+  opacity: 0;
+  animation: scan 4.6s var(--ease) infinite;
+  pointer-events: none;
+}
+@keyframes scan {
+  0%   { transform: translateY(0); opacity: 0; }
+  10%, 90% { opacity: 0.5; }
+  50%  { transform: translateY(calc(100% + 60px)); }
+  100% { transform: translateY(0); opacity: 0; }
+}
+
+.hover-label {
+  position: absolute;
+  padding: 3px 7px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #17120a;
+  background: var(--glow);
+  transform: translate(-50%, -150%);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.context-menu {
+  position: absolute;
+  z-index: 5;
+  border: 1px solid var(--line-strong);
+  background: rgba(8, 9, 16, 0.96);
+  backdrop-filter: blur(6px);
+}
+.context-menu button {
+  display: block;
+  width: 100%;
+  padding: 10px 15px;
+  font-size: 12.5px;
+  text-align: left;
+  white-space: nowrap;
+}
+.context-menu button:hover { background: var(--glow); color: #17120a; }
+
+.scrub-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 13px;
+  align-items: center;
+  margin-top: 13px;
+}
+.scrub-row output {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track { height: 1px; background: var(--line-strong); }
+input[type="range"]::-moz-range-track { height: 1px; background: var(--line-strong); }
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px;
+  height: 11px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--glow);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--glow);
+}
+
+.frame-side { display: grid; gap: 17px; }
+.frame-side h2 { margin: 0; font-size: 20px; line-height: 1.2; }
+.side-block { display: grid; gap: 9px; }
+.side-label {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.microcopy { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.selected-name {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 500;
+  text-transform: capitalize;
+  color: var(--glow);
+}
+
+.prompt-row { display: flex; gap: 7px; }
+.prompt-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--line-strong);
+  background: rgba(238, 242, 250, 0.03);
+  color: var(--ink);
+}
+.prompt-row input:focus { border-color: var(--glow); outline: none; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 17px;
+  border: 1px solid var(--line-strong);
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: background 0.25s var(--ease), border-color 0.25s var(--ease),
+    color 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.btn-block { width: 100%; }
+.btn-primary { background: var(--glow); border-color: var(--glow); color: #17120a; }
+.btn-primary:hover:not(:disabled) {
+  background: var(--glow-hot);
+  border-color: var(--glow-hot);
+  transform: translateY(-1px);
+}
+.btn-quiet:hover { border-color: var(--glow); color: var(--glow); }
+.btn:disabled { opacity: 0.32; cursor: not-allowed; transform: none; }
+
+/* ── working ── */
+
+#stepWorking { display: grid; place-items: center; min-height: 320px; }
+.working { display: grid; justify-items: center; gap: 16px; text-align: center; }
+.working p { margin: 0; }
+.working-stack {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  transform-style: preserve-3d;
+  transform: rotateX(62deg) rotateZ(45deg);
+  perspective: 420px;
+}
+.working-stack i {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--glow);
+  animation: stackRise 2.1s var(--ease) infinite;
+}
+.working-stack i:nth-child(1) { animation-delay: 0s; }
+.working-stack i:nth-child(2) { animation-delay: 0.16s; }
+.working-stack i:nth-child(3) { animation-delay: 0.32s; }
+.working-stack i:nth-child(4) { animation-delay: 0.48s; }
+.working-stack i:nth-child(5) { animation-delay: 0.64s; }
+.working-stack i:nth-child(6) { animation-delay: 0.8s; }
+@keyframes stackRise {
+  0%   { transform: translateZ(-4px); opacity: 0; }
+  22%  { opacity: 0.85; }
+  100% { transform: translateZ(46px); opacity: 0; }
+}
+
+/* ═══════════ toast ═══════════ */
+
+.toast {
+  position: fixed;
+  z-index: 10;
+  left: 50%;
+  bottom: 96px;
+  transform: translate(-50%, 10px);
+  padding: 10px 17px;
+  border: 1px solid var(--line-strong);
+  background: rgba(8, 9, 16, 0.94);
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  max-width: 88vw;
+  text-align: center;
+  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+.noscript {
+  position: fixed;
+  inset: auto 0 0;
+  margin: 0;
+  padding: 18px;
+  text-align: center;
+  background: #04050a;
+  color: var(--muted);
+}
+
+body.is-turning, body.is-turning #latticeCanvas { cursor: grabbing; }
+
+/* while the picker is open, the edges must not fling you out of the cell */
+body.panel-open .edge { opacity: 0; pointer-events: none; }
+body.panel-open .t-rail,
+body.panel-open .keys { opacity: 0.2; }
+
+/* ═══════════ responsive ═══════════ */
+
+@media (max-width: 900px) {
+  #stepFrame { grid-template-columns: 1fr; }
+  .keys { display: none; }
+  .t-rail { right: 14px; }
+  .t-track { height: 22vh; }
+  .instrument-cell { padding: 78px 16px 90px; }
+  .plaque { max-width: 62vw; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain, .scan-line { display: none; }
+  .mark-glyph::after,
+  .drop-mark i,
+  .working-stack i { animation: none; }
+  .working-stack i:nth-child(n + 2) { opacity: 0.3; }
+}
+
+/* ═══════════ build modes, build chip, 3D viewer ═══════════ */
+
+.mode-pick { display: grid; gap: 7px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.mode-pick legend { padding: 0; margin-bottom: 2px; }
+.mode-card {
+  position: relative;
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px 10px 34px;
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+  transition: border-color 0.25s var(--ease), background 0.25s var(--ease);
+}
+.mode-card input {
+  position: absolute;
+  left: 12px;
+  top: 13px;
+  width: 11px;
+  height: 11px;
+  margin: 0;
+  accent-color: var(--glow);
+}
+.mode-card b { font-size: 12.5px; font-weight: 500; }
+.mode-card small { font-size: 11px; line-height: 1.45; color: var(--muted); }
+.mode-card:hover { border-color: var(--glow); }
+.mode-card:has(input:checked) { border-color: var(--glow); background: rgba(255, 217, 168, 0.06); }
+.mode-card:has(input:focus-visible) { outline: 2px solid var(--glow); outline-offset: 2px; }
+.mode-card:has(input:disabled) { opacity: 0.4; cursor: not-allowed; }
+
+.build-chip {
+  position: fixed;
+  z-index: 9;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(520px, 88vw);
+  padding: 8px 15px;
+  border: 1px solid var(--line-strong);
+  background: rgba(8, 9, 16, 0.92);
+  backdrop-filter: blur(6px);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--glow);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.build-chip:not(:disabled) { cursor: pointer; }
+.build-chip:not(:disabled):hover { background: var(--glow); color: #17120a; }
+.build-chip:disabled { cursor: default; }
+.build-chip.is-busy::before { content: "◌ "; display: inline-block; animation: chipSpin 1.4s linear infinite; }
+@keyframes chipSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .build-chip.is-busy::before { animation: none; } }
+
+.viewer { position: fixed; inset: 0; z-index: 30; background: #020304; }
+.viewer iframe { width: 100%; height: 100%; border: 0; display: block; }
+.viewer-close {
+  position: absolute;
+  bottom: 14px;
+  right: 16px;
+  padding: 8px 14px;
+  border: 1px solid var(--line-strong);
+  background: rgba(8, 9, 16, 0.9);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--glow);
+  cursor: pointer;
+}
+.viewer-close:hover, .viewer-close:focus-visible { background: var(--glow); color: #17120a; outline: none; }
+/* phone: the viewers keep their controls along the bottom; the corner up top is free */
+@media (max-width: 640px) {
+  .viewer-close { top: calc(10px + env(safe-area-inset-top, 0px)); bottom: auto; right: 10px; min-height: 40px; }
+  /* the Basic viewer's info line runs the full width of its top bar */
+  .viewer[data-page="basic"] .viewer-close { top: calc(64px + env(safe-area-inset-top, 0px)); }
+}
+
+/* upload step: tier choice first, then the clip */
+#stepUpload h2 { margin-bottom: 16px; }
+#stepUpload .mode-pick { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+#stepUpload .mode-pick legend { grid-column: 1 / -1; }
+#stepUpload .drop-zone { min-height: clamp(120px, 17vh, 170px); }
+.step-label { margin: 16px 0 8px; }
+.manual-pick { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 12px; color: var(--muted); cursor: pointer; }
+.manual-pick input { accent-color: var(--glow); }
+.manual-pick small { color: var(--dim); }
+@media (max-width: 640px) { #stepUpload .mode-pick { grid-template-columns: 1fr; } }
+
+.upload-cta {
+  pointer-events: auto;
+  margin-left: auto;
+  margin-right: 18px;
+  padding: 8px 14px;
+  border: 1px solid var(--glow);
+  background: rgba(8, 9, 16, 0.6);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--glow);
+  cursor: pointer;
+  transition: background 0.25s var(--ease), color 0.25s var(--ease);
+}
+.upload-cta:hover, .upload-cta:focus-visible { background: var(--glow); color: #17120a; outline: none; }
+.studio-nav { display: flex; align-items: center; gap: 8px; margin-left: auto; pointer-events: auto; }
+.studio-nav .upload-cta { display: block; min-height: 44px; margin: 0; white-space: nowrap; }
+#latticeCanvas:focus-visible { outline: 2px solid var(--glow); outline-offset: -4px; }
+@media (max-width: 900px) {
+  .hud-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+  .hud-top .mark { grid-column: 1; grid-row: 1; }
+  .hud-top .coord { grid-column: 2; grid-row: 1; }
+  .studio-nav { grid-column: 1 / -1; grid-row: 2; margin: 0; justify-content: flex-end; }
+  .instrument-cell { padding-top: 118px; }
+}
+
+/* the view toggles sit over the menu in your cell; they matter everywhere else */
+body.in-instrument .toggles { opacity: 0; pointer-events: none; }
+body.panel-open .toggles { opacity: 0; pointer-events: none; }
+
+/* ═══════════ studio (tiers, consent, builds, route, progress) ═══════════ */
+
+#stepUpload .tier-pick { grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 4px; }
+@media (max-width: 720px) { #stepUpload .tier-pick { grid-template-columns: 1fr; } }
+
+.me-row { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; }
+.me-row .link-btn { margin-left: auto; flex: none; min-height: 44px; white-space: nowrap; }
+#meLine { min-width: 0; overflow-wrap: anywhere; }
+
+.consent { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; font-size: 12px; line-height: 1.55; color: var(--muted); cursor: pointer; }
+.consent input { margin-top: 3px; accent-color: var(--glow); flex: none; width: 14px; height: 14px; }
+.consent a { color: var(--glow); }
+
+#stepUpload.library-view > :not(#myBuilds):not(.meta-note) { display: none !important; }
+#stepUpload.library-view #myBuilds { margin-top: 0; padding-top: 0; border-top: 0; }
+.builds { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 10px; }
+.build-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.build { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 4px 12px; padding: 10px; border: 1px solid var(--line); background: rgba(238, 242, 250, 0.02); }
+.build-preview { width: 96px; height: 54px; grid-row: span 2; display: grid; place-items: center; border: 1px solid var(--line); background: #070914; color: var(--muted); text-align: center; font-size: 10px; }
+.build-preview img { width: 100%; height: 100%; object-fit: cover; }
+.build-preview:has(img) span { display: none; }
+.build-meta { display: grid; gap: 2px; font-size: 12px; min-width: 0; }
+.build-meta b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46ch; }
+.build-meta .dim { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; }
+.build-err { font-size: 11.5px; color: #d8724f; overflow-wrap: anywhere; }
+.build-btns { display: flex; flex-wrap: wrap; gap: 4px 8px; grid-column: 2; }
+.build-btns .link-btn { min-width: 44px; min-height: 44px; padding: 8px 6px; }
+.meta-note { margin-top: 16px; }
+.meta-note a { color: var(--muted); }
+.meta-note a:hover { color: var(--glow); }
+
+.route-card { display: grid; gap: 12px; margin: 16px 0 20px; padding: 14px; border: 1px solid var(--line); background: rgba(238, 242, 250, 0.02); }
+.route-facts { display: grid; gap: 8px; margin: 0; }
+.route-facts > div { display: grid; grid-template-columns: 90px 1fr; gap: 10px; }
+.route-facts dt { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+.route-facts dd { margin: 0; font-size: 13px; }
+.warn-list { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.decline { margin: 0; padding: 10px 12px; border: 1px solid #d8724f; color: #e89a7d; font-size: 13px; line-height: 1.5; }
+.row-btns { display: flex; align-items: center; gap: 18px; }
+.row-btns .btn-primary { flex: 1; }
+
+.object-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 180px; overflow: auto; }
+.object-list button { width: 100%; text-align: left; padding: 8px 11px; border: 1px solid var(--line); font-size: 12.5px; text-transform: capitalize; color: var(--muted); transition: border-color 0.2s, color 0.2s; }
+.object-list button:hover { border-color: var(--glow-soft); color: var(--ink); }
+.object-list button[aria-pressed="true"] { border-color: var(--glow); color: var(--glow); background: rgba(255, 217, 168, 0.06); }
+.chip-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-list:not(.static) li { display: inline-flex; align-items: center; gap: 8px; padding: 6px 8px 6px 11px; border: 1px solid var(--glow-soft); font-size: 12px; text-transform: capitalize; color: var(--glow); }
+.chip-list:not(.static) button { color: var(--dim); font-size: 11px; padding: 2px 4px; }
+.chip-list:not(.static) button:hover { color: var(--glow-hot); }
+.chip-list.static li { padding: 4px 10px; border: 1px solid var(--line); font-size: 11.5px; color: var(--muted); text-transform: none; }
+
+.progress { height: 3px; background: var(--line); width: min(420px, 100%); }
+.progress i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--glow-soft), var(--glow)); transition: width 0.4s var(--ease); }
+#stepWorking .working { min-height: 320px; align-content: center; }
+
+#stepDone h2 { margin: 0 0 8px; font-size: clamp(20px, 2.6vw, 28px); font-weight: 500; letter-spacing: -0.02em; }
+#stepDone .row-btns { margin: 16px 0 10px; }
+
+/* ═══════════ subpages (view-lite, admin, terms) ═══════════
+   Same construct chrome, as documents: they scroll, they explain. */
+
+.page { min-height: 100%; overflow: auto; overscroll-behavior: auto; touch-action: auto; }
+.page body, body.page { overflow: auto; touch-action: auto; }
+body.page { display: block; }
+.page-wrap { max-width: 1060px; margin: 0 auto; padding: clamp(70px, 10vh, 110px) clamp(18px, 4vw, 40px) 80px; }
+.page-kicker { margin: 0 0 10px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--glow); }
+.page-wrap h1 { margin: 0 0 10px; font-size: clamp(24px, 3.4vw, 38px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.1; }
+.page-lede { margin: 0 0 22px; font-size: 13.5px; line-height: 1.6; color: var(--muted); max-width: 70ch; }
+.page-lede a, .terms-body a { color: var(--glow); }
+.stage { position: relative; border: 1px solid var(--line); background: #020304; }
+.stage canvas { display: block; width: 100%; height: min(62vh, 560px); cursor: grab; }
+.stage-bar { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); background: rgba(4, 5, 10, 0.8); flex-wrap: wrap; }
+.stage-bar output { font-family: var(--mono); font-size: 11px; color: var(--muted); min-width: 64px; }
+.stage-bar input[type="range"] { flex: 1; min-width: 140px; }
+.stage-state { display: grid; place-items: center; gap: 10px; padding: 60px 20px; text-align: center; color: var(--muted); font-size: 13px; }
+.stage-state .btn { margin-top: 6px; }
+.prov { margin: 14px 0 0; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+.back-row { margin-top: 26px; display: flex; gap: 18px; align-items: center; }
+
+.admin-grid { display: grid; gap: 12px; margin-top: 18px; }
+.admin-card { display: grid; grid-template-columns: 160px 1fr; gap: 14px; padding: 12px; border: 1px solid var(--line); background: rgba(238, 242, 250, 0.02); }
+.admin-card img { width: 160px; height: 90px; object-fit: cover; border: 1px solid var(--line); background: #000; }
+.admin-card b { display: block; font-weight: 500; margin-bottom: 2px; }
+.admin-card .dim { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; }
+.admin-card .row-btns { margin-top: 10px; }
+.admin-card .row-btns .btn-primary { flex: none; }
+.kill-row { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 12px 14px; border: 1px solid var(--line); flex-wrap: wrap; }
+.kill-row .dim { flex-basis: 100%; }
+
+.terms-body { max-width: 72ch; display: grid; gap: 4px; }
+.terms-body h2 { font-size: 15px; font-weight: 500; margin: 22px 0 0; color: var(--glow); font-family: var(--mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; }
+.terms-body p, .terms-body li { font-size: 13.5px; line-height: 1.65; color: var(--muted); }
+.terms-body ul { padding-left: 20px; margin: 6px 0; display: grid; gap: 6px; }
+
+@media (max-width: 640px) {
+  .admin-card { grid-template-columns: 1fr; }
+  .admin-card img { width: 100%; height: auto; }
+  .build { grid-template-columns: 72px 1fr; }
+  .build img { width: 72px; height: 42px; }
+  .route-facts > div { grid-template-columns: 76px 1fr; }
+}
+
+/* maintenance + recommendation (web run 3) */
+.maint-banner {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--glow-soft);
+  color: var(--glow);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.rec-why b { color: var(--glow); font-weight: 500; }
+.route-flag {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--glow-soft);
+  color: var(--glow);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.status-grid { margin: 14px 0 4px; padding: 12px 14px; border: 1px solid var(--line); }
+
+/* Studio surfaces stay readable against the moving construct. */
+.instrument-inner {
+  background: rgba(7, 9, 15, 0.96);
+  border-color: rgba(238, 242, 250, 0.22);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.45);
+  touch-action: pan-y;
+}
+.instrument-inner .dim { color: #b5ad9d; }
+.instrument-inner .side-label { color: #c5b9a7; }
+.instrument-inner h2 { line-height: 1.15; letter-spacing: -0.03em; }
+#stepUpload .tier-pick { gap: 12px; }
+.tier-pick .mode-card {
+  --tier: #3cdcff;
+  align-content: start;
+  gap: 10px;
+  padding: 18px 16px 18px 42px;
+  border-color: rgba(238, 242, 250, 0.2);
+  border-top: 3px solid var(--tier);
+  background: rgba(255, 255, 255, 0.035);
+}
+.tier-pick .mode-card:has(input[value="basic"]) { --tier: #ffc828; }
+.tier-pick .mode-card:has(input[value="advanced"]) { --tier: #ff5aa0; }
+.tier-pick .mode-card input { left: 16px; top: 20px; width: 15px; height: 15px; accent-color: var(--tier); }
+.tier-pick .mode-card b { color: var(--tier); font-size: 15px; font-weight: 600; }
+.tier-pick .mode-card small { color: #d2cdc3; font-size: 12px; line-height: 1.55; }
+.tier-pick .mode-card small strong { color: #f3f1ed; font-weight: 600; }
+.tier-pick .mode-card:hover, .tier-pick .mode-card:has(input:checked) { border-color: var(--tier); background: rgba(255, 255, 255, 0.07); }
+.tier-pick .mode-card:has(input:focus-visible) { outline: 2px solid var(--tier); outline-offset: 3px; }
+.drop-zone { background: rgba(255, 255, 255, 0.025); border-color: rgba(238, 242, 250, 0.35); }
+.drop-zone:has(input:focus-visible) { outline: 2px solid var(--glow); outline-offset: 3px; }
+.drop-zone small { color: #c5b9a7; }
+.builds { margin-top: 28px; padding-top: 20px; }
+#buildsEmpty { margin: 0; padding: 18px; border: 1px dashed var(--line-strong); }
+.build { padding: 14px; background: rgba(255, 255, 255, 0.035); border-left: 3px solid var(--line-strong); }
+.build[data-tier="lite"] { border-left-color: #3cdcff; }
+.build[data-tier="basic"] { border-left-color: #ffc828; }
+.build[data-tier="advanced"] { border-left-color: #ff5aa0; }
+.pipeline-info { margin: 10px 0; color: var(--muted); }
+.pipeline-info summary { min-height: 44px; display: list-item; align-content: center; cursor: pointer; font-size: 12px; }
+.pipeline-info p { margin: 0 0 12px; }
+.build-err { color: #ffad95; }
+.route-card { padding: 20px; gap: 14px; background: rgba(255, 255, 255, 0.035); }
+.route-facts > div { padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.route-facts dt { color: #c5b9a7; }
+.route-facts dd { font-size: 14px; }
+.maint-banner, .route-flag, .decline { background: rgba(255, 200, 120, 0.07); }
+:focus-visible { outline-width: 2px; }
+@media (max-width: 720px) {
+  .instrument-cell { padding: 118px 14px 78px; }
+  .instrument-inner { padding: 20px; }
+  .tier-pick .mode-card { gap: 5px; padding-top: 12px; padding-bottom: 12px; }
+  .tier-pick .mode-card input { top: 14px; }
+  .tier-pick .mode-card:not(:has(input:checked)) small { display: none; }
+  .build { grid-template-columns: 72px minmax(0, 1fr); gap: 8px; }
+  .build-preview { width: 72px; height: 48px; grid-row: auto; }
+  .build-btns { grid-column: 1 / -1; }
+  .sample-row { flex-wrap: wrap; }
+  .route-card { padding: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .instrument-cell, .mode-card, .drop-zone, .progress i { transition: none; }
+}
+
+/* ═══════════ the walk (doors, map, plaque, intro) ═══════════ */
+
+/* the plaque reads like a gallery label: what kind of room, its name, its
+   credit, and what you can do here */
+.plaque { gap: 6px; max-width: 48ch; transition: opacity 0.2s var(--ease), transform 0.2s var(--ease); }
+.plaque.is-swapping { opacity: 0; transform: translateY(5px); }
+.plaque .plaque-kicker {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dim);
+  line-height: 1.2;
+}
+.plaque b { font-size: 12px; letter-spacing: 0.28em; }
+.plaque #cellNote { font-size: 13px; line-height: 1.5; color: var(--muted); }
+.plaque .plaque-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.plaque .plaque-actions:empty { display: none; }
+.plaque-btn {
+  pointer-events: auto;
+  min-height: 34px;
+  padding: 7px 13px;
+  border: 1px solid var(--glow-soft);
+  background: rgba(8, 7, 10, 0.55);
+  backdrop-filter: blur(5px);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--glow);
+  text-shadow: none;
+  transition: background 0.25s var(--ease), color 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+.plaque-btn:first-child { border-color: var(--glow); }
+.plaque-btn:hover, .plaque-btn:focus-visible { background: var(--glow); color: #17120a; border-color: var(--glow); outline: none; }
+
+/* main nav: Create is the one thing to do; the others are ways around */
+.studio-nav .upload-cta { border-color: var(--line-strong); color: var(--muted); background: rgba(8, 9, 16, 0.45); }
+.studio-nav #uploadCta { border-color: var(--glow); background: var(--glow); color: #17120a; }
+.studio-nav .upload-cta:hover, .studio-nav .upload-cta:focus-visible { border-color: var(--glow); color: var(--glow); background: rgba(8, 9, 16, 0.75); }
+.studio-nav #uploadCta:hover, .studio-nav #uploadCta:focus-visible { background: var(--glow-hot); border-color: var(--glow-hot); color: #17120a; }
+body.in-instrument .studio-nav #exploreCta { border-color: var(--glow-soft); color: var(--ink); }
+
+/* the map: the 3x3 window around you holds every room exactly once */
+.map {
+  position: fixed;
+  z-index: 8;
+  right: clamp(20px, 5vw, 54px);
+  bottom: 100px;
+  display: grid;
+  grid-template-columns: repeat(3, 15px);
+  gap: 4px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  background: rgba(7, 6, 10, 0.4);
+  backdrop-filter: blur(5px);
+}
+.map button {
+  position: relative;
+  width: 15px;
+  height: 15px;
+  border: 1px solid rgba(238, 242, 250, 0.16);
+  transition: border-color 0.25s var(--ease), background 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.map button i {
+  position: absolute;
+  inset: 4px;
+  transition: background 0.25s var(--ease);
+}
+.map button[data-kind="example"] i { background: rgba(255, 217, 168, 0.55); border-radius: 50%; }
+.map button[data-kind="published"] i { background: var(--glow); }
+.map button[data-kind="yours"] { border-color: var(--glow-soft); }
+.map button[data-kind="yours"] i { inset: 3px; border: 1px solid var(--glow); }
+.map button[aria-current] { border-color: var(--glow); box-shadow: 0 0 10px rgba(255, 217, 168, 0.35); }
+.map button:hover, .map button:focus-visible { border-color: var(--glow-hot); background: rgba(255, 217, 168, 0.12); outline: none; transform: scale(1.12); }
+.map button::after {
+  content: attr(data-name);
+  position: absolute;
+  top: 50%;
+  padding: 4px 8px;
+  border: 1px solid var(--line-strong);
+  background: rgba(8, 7, 10, 0.92);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(4px, -50%);
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+}
+/* every label sits just left of the map, whichever column it comes from */
+.map button:nth-child(3n + 1)::after { right: calc(100% + 15px); }
+.map button:nth-child(3n + 2)::after { right: calc(100% + 34px); }
+.map button:nth-child(3n + 3)::after { right: calc(100% + 53px); }
+.map button:hover::after, .map button:focus-visible::after { opacity: 1; transform: translate(0, -50%); }
+/* touch: a tap leaves :hover stuck, so the name would hang over the plaque */
+@media (hover: none) { .map button:hover:not(:focus-visible)::after { opacity: 0; } }
+
+.keys { gap: 4px; }
+
+/* the studio is a panel you open in your cell; the walk's chrome steps back */
+.studio-close {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: block;
+  width: max-content;
+  min-height: 34px;
+  /* pinned to the panel's top-right corner without taking a line of its own */
+  margin: -8px -8px -26px auto;
+  padding: 6px 11px;
+  border: 1px solid var(--line-strong);
+  background: rgba(7, 9, 15, 0.9);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+.studio-close:hover, .studio-close:focus-visible { color: var(--glow); border-color: var(--glow); outline: none; }
+body.in-instrument .doors,
+body.in-instrument .map,
+body.in-instrument .edge,
+body.in-instrument .hud-bottom,
+body.in-instrument .t-rail { opacity: 0; pointer-events: none; }
+body.in-instrument .hud-bottom *, body.in-instrument .doors * { pointer-events: none !important; }
+.instrument-inner [tabindex="-1"]:focus { outline: none; }
+
+/* studio steps arrive rather than swap */
+.instrument-cell.is-live .step:not(.is-hidden) { animation: stepIn 0.5s var(--ease) both; }
+@keyframes stepIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.instrument-cell { transition: opacity 0.55s var(--ease), transform 0.55s var(--ease); }
+.instrument-cell.is-live { transition-delay: 0.12s; }
+
+/* build progress: a clock against the tier's usual time, and the stages done */
+#workingTitle { font-size: 17px; font-weight: 500; letter-spacing: -0.01em; }
+.work-clock { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--muted); }
+.work-log { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 5px; justify-items: center; }
+.work-log li { font-size: 12px; color: var(--dim); animation: stepIn 0.4s var(--ease) both; }
+.work-log li::before { content: "✓  "; color: var(--glow); }
+.progress i { transition: width 1.4s linear; }
+
+/* my builds: room to breathe under the heading */
+#myBuilds > .side-label { padding: 2px 0 4px; scroll-margin-top: 24px; }
+
+/* the way in: the HUD waits for the fall, then settles a beat behind it */
+.hud-top, .hud-bottom, .t-rail, .map, .toggles { transition: opacity 0.9s var(--ease); }
+body.is-intro .hud-top, body.is-intro .hud-bottom, body.is-intro .t-rail, body.is-intro .map, body.is-intro .toggles, body.is-intro .doors { opacity: 0; }
+.hud-bottom { transition-delay: 0.15s; }
+.t-rail, .map { transition-delay: 0.3s; }
+.toggles { transition-delay: 0.45s; }
+body.in-instrument .hud-bottom, body.in-instrument .t-rail, body.in-instrument .map { transition-delay: 0s; transition-duration: 0.4s; }
+.veil::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: #050403;
+  opacity: 0;
+  pointer-events: none;
+}
+body.is-intro .veil::after { animation: veilLift 1s var(--ease) 0.1s both; }
+/* if the scene never starts, the HUD still arrives */
+body.is-intro .hud-top, body.is-intro .hud-bottom { animation: introSafety 0.4s 8s forwards; }
+@keyframes introSafety { to { opacity: 1; } }
+@keyframes veilLift { from { opacity: 1; } to { opacity: 0; } }
+/* reduced motion: a crossing is a cut behind a short fade, not a camera move */
+.veil.is-cut::after { animation: veilCut 0.5s ease-out both; }
+@keyframes veilCut { from { opacity: 0.85; } to { opacity: 0; } }
+
+@media (max-width: 900px) {
+  .map { right: 14px; bottom: 66px; grid-template-columns: repeat(3, 13px); gap: 3px; padding: 6px; }
+  .map button { width: 13px; height: 13px; }
+  .map button i { inset: 3px; }
+  .map button[data-kind="yours"] i { inset: 2px; }
+  .plaque { max-width: calc(100vw - 110px); }
+  .plaque b { font-size: 11px; letter-spacing: 0.22em; }
+  .plaque #cellNote { font-size: 12px; }
+}
+@media (max-width: 640px) {
+  .door { padding: 6px 9px; gap: 7px; }
+  .door b { font-size: 9px; letter-spacing: 0.16em; }
+  .door small { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .plaque, .door, .map button, .instrument-cell { transition: none; }
+  .instrument-cell.is-live .step:not(.is-hidden), .work-log li { animation: none; }
+  .progress i { transition: none; }
+}
+
+/* a room that is still hanging says so, softly */
+.plaque.is-loading .plaque-kicker { animation: hanging 1.6s ease-in-out infinite; }
+@keyframes hanging { 50% { color: var(--glow); } }
+/* presses land */
+.btn:active:not(:disabled), .plaque-btn:active, .upload-cta:active, .door:active, .map button:active { transform: scale(0.97); }
+/* once you have walked, the key hints step back */
+.keys { transition: opacity 0.8s var(--ease); }
+body.has-travelled .keys { opacity: 0.5; }
+body.has-travelled .keys:hover { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .plaque.is-loading .plaque-kicker { animation: none; color: var(--glow); }
+}
+
+/* ═══════════ the title and the way in ═══════════ */
+
+/* before the construct can draw, the page is the haze it comes out of */
+html, body { background: radial-gradient(120% 95% at 50% 46%, #2a1c0f 0%, #140d08 52%, #07060a 100%) var(--void); }
+/* the veil holds the haze until the first frame is drawn, then lifts; without
+   the script it lifts on its own after a few seconds */
+body.is-intro .veil::after {
+  background: radial-gradient(120% 95% at 50% 46%, #2a1c0f 0%, #140d08 52%, #07060a 100%);
+  animation: veilLift 1s var(--ease) 6s both;
+}
+body.is-intro.scene-ready .veil::after { animation: veilReady 1.2s var(--ease) both; }
+@keyframes veilReady { from { opacity: 1; } to { opacity: 0; } }
+
+/* the title: what this is, in one glance, over the way in */
+.title-card {
+  position: fixed;
+  left: 50%;
+  top: 47%;
+  z-index: 9;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: min(34rem, calc(100vw - 40px));
+  padding: 30px 32px;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(7, 6, 10, 0.5), transparent);
+  transition: opacity 0.9s var(--ease), transform 0.9s var(--ease), filter 0.9s var(--ease);
+  animation: titleIn 0.8s var(--ease) backwards;
+}
+.title-card p, .title-card h1 { margin: 0; }
+.title-kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--glow);
+}
+.title-head {
+  font-family: var(--display);
+  font-size: clamp(30px, 4.6vw, 48px);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+}
+.title-line {
+  max-width: 30rem;
+  font-size: clamp(14px, 1.5vw, 16px);
+  line-height: 1.5;
+  color: #ddd3c1;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.75);
+}
+.title-line + .title-line { color: var(--muted); }
+.title-card.is-out { opacity: 0; transform: translate(-50%, calc(-50% - 10px)); filter: blur(3px); }
+/* gone from view but still read by screen readers: it is the page's heading */
+.title-card.is-gone { filter: none; clip-path: inset(50%); }
+@keyframes titleIn { from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)); } }
+
+/* a first visit: once the title lifts, the one thing to do glows twice */
+body.first-look .studio-nav #uploadCta { animation: createCall 1.7s var(--ease) 0.3s 2; }
+@keyframes createCall {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 217, 168, 0); }
+  40% { box-shadow: 0 0 0 5px rgba(255, 217, 168, 0.22), 0 0 28px rgba(255, 217, 168, 0.45); }
+}
+
+/* the plaque says what you are looking at, then whose it is */
+.plaque .plaque-how { font-size: 13px; line-height: 1.45; color: #e3d9c7; }
+.plaque .plaque-how:empty { display: none; }
+.plaque #cellNote { font-size: 11.5px; line-height: 1.45; color: var(--dim); }
+.plaque .plaque-how:empty + #cellNote { font-size: 13px; color: var(--muted); }
+
+/* My builds: the heading shares its row with the close button, so the first
+   card starts below it rather than under it */
+#stepUpload.library-view #myBuilds > .side-label {
+  display: flex;
+  align-items: center;
+  min-height: 34px;
+  margin: 0 0 8px;
+  padding: 0 96px 0 0;
+  scroll-margin-top: clamp(20px, 3vw, 34px);
+}
+
+@media (max-width: 900px) {
+  .plaque .plaque-how { font-size: 12.5px; }
+  .plaque #cellNote { font-size: 11px; }
+}
+@media (max-width: 720px) {
+  #stepUpload.library-view #myBuilds > .side-label { scroll-margin-top: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .title-card { animation: none; transition: opacity 0.6s linear; }
+  .title-card.is-out { transform: translate(-50%, -50%); filter: none; }
+  body.first-look .studio-nav #uploadCta { animation: none; }
+}
+
+/* words for the hand you have: scroll with a pointer, swipe on a touch screen */
+.for-touch { display: none; }
+@media (hover: none) {
+  .for-pointer { display: none; }
+  .for-touch { display: inline; }
+}
+/* the title sits in the upper third, so the room it describes shows beneath it */
+.title-card { top: 31%; }
+@media (max-width: 640px) { .title-card { top: 30%; } }
+/* the map says what it is */
+.map::before {
+  content: "rooms";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 5px);
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.22em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+/* the studio's state is a quiet word; trouble is the only loud one */
+.backend-state.is-ok { color: var(--dim); }
+/* on a phone the healthy studio is just the lit glyph; trouble still says so */
+@media (max-width: 640px) {
+  .backend-state.is-ok { font-size: 0; letter-spacing: 0; }
+  .backend-state.is-ok::before { font-size: 10px; }
+}
+
+/* ═══════════ the create flow, walked as a first-timer (loop 6) ═══════════ */
+
+/* the close button shares the first line of a step, never its heading */
+.instrument-inner .step > .step-kicker:first-child { min-height: 26px; padding-right: 104px; }
+@media (max-width: 720px) {
+  #stepFrame .frame-stage { margin-top: 34px; }
+  #stepWorking .working { padding-top: 30px; }
+}
+/* a short desktop window keeps the clip, the sample and the consent in view */
+@media (min-width: 721px) and (max-height: 820px) {
+  .instrument-cell { padding-top: 78px; padding-bottom: 24px; }
+  #stepUpload .drop-zone { min-height: 104px; gap: 6px; }
+  #stepUpload .drop-mark { width: 30px; height: 30px; margin-bottom: 4px; }
+}
+
+/* the drop zone says what is happening to your clip */
+.drop-zone.is-busy { pointer-events: none; border-style: solid; border-color: var(--glow-soft); }
+.drop-zone.is-busy::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--glow), transparent) no-repeat;
+  background-size: 40% 100%;
+  animation: dropBusy 1.3s linear infinite;
+}
+@keyframes dropBusy { from { background-position: -40% 0; } to { background-position: 140% 0; } }
+.drop-zone.is-waiting { border-style: solid; border-color: var(--glow); }
+.sample-row { margin-top: 10px; }
+.sample-row [data-sample] { min-height: 32px; color: var(--glow); border-color: var(--glow-soft); }
+.consent + .sample-credit { margin-top: 12px; }
+
+/* a clip given before the tick: the box asks, right where it is */
+.consent.is-asking {
+  outline: 1px solid var(--glow);
+  outline-offset: 6px;
+  background: rgba(255, 217, 168, 0.07);
+  color: var(--ink);
+  animation: consentAsk 1.1s var(--ease) 2;
+}
+.consent.is-asking input { box-shadow: 0 0 0 3px rgba(255, 217, 168, 0.45); }
+@keyframes consentAsk { 50% { outline-color: transparent; } }
+/* the consent box itself asks, so its notice stays for screen readers only
+   and never covers the drop zone's own line */
+body:has(.consent.is-asking) .toast { clip-path: inset(50%); transition: none; }
+
+/* the clip check offers its recommendation in one step */
+.route-switch { justify-self: start; border-color: var(--glow-soft); color: var(--glow); }
+.route-switched { color: var(--glow); }
+
+/* picking: the list and Build come first; other ways to pick sit below */
+.frame-side .objects-block:has(#objectList:empty) { display: none; }
+.fallback-block { padding-top: 14px; border-top: 1px solid var(--line); }
+.fallback-block:not(:has(#drawBox[aria-pressed="true"])) .box-keys {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* once something is picked, Build stays in reach while you look around */
+#stepFrame .selected-block {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  padding: 12px 0 4px;
+  background: rgb(7, 9, 15);
+  box-shadow: 0 -16px 16px -4px rgb(7, 9, 15);
+}
+
+/* working: what is being built, a way to walk meanwhile, a way back from a stop */
+.working [hidden] { display: none !important; }
+.working.has-preview .working-stack { display: none; }
+.work-preview { display: block; width: min(260px, 72%); height: auto; border: 1px solid var(--line-strong); }
+.work-away { display: grid; justify-items: center; gap: 8px; margin-top: 6px; }
+.work-away .btn { min-height: 44px; }
+.work-fail { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 18px; }
+
+/* done: a picture of it, and what it is in one phrase */
+.done-thumb { display: block; width: min(300px, 100%); aspect-ratio: 16 / 9; object-fit: contain; margin: 6px 0 12px; border: 1px solid var(--line-strong); background: #070914; }
+.done-thumb[hidden] { display: none; }
+.done-what { margin: 0 0 6px; font-size: 14px; line-height: 1.5; color: var(--ink); }
+#stepDone .row-btns { flex-wrap: wrap; gap: 10px 16px; }
+@media (max-width: 720px) {
+  #stepDone .row-btns .btn { flex: 1 1 auto; }
+  #stepDone .row-btns .btn-primary { flex-basis: 100%; }
+}
+
+/* the build chip sits under the header, which takes two rows on narrow screens */
+.build-chip.is-busy::before { content: "◌"; margin-right: 0.7em; }
+@media (max-width: 900px) { .build-chip { top: 112px; } }
+
+/* touch: a tap leaves :hover stuck, so a door would keep its picture open */
+@media (hover: none) {
+  .door:hover:not(.is-peek) .door-thumb { width: 0; height: 0; margin-bottom: 0; opacity: 0; border-color: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop-zone.is-busy::after { animation: none; background: var(--glow-soft); }
+  .consent.is-asking { animation: none; }
+}

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lite sampling speed — 1 in 1 versus 1 in 5</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="live.css"><link rel="stylesheet" href="lite.css"><link rel="stylesheet" href="compare.css"><link rel="stylesheet" href="lite3.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.js"}}</script>
+</head>
+<body>
+<header class="top"><a href="compare.html">← three tiers</a><b>LITE · SAM SAMPLING SPEED</b><span id="shared">Upload a clip</span><time id="overall">0.0 s</time><button type="button" id="stopAll" class="stop" title="Stop every build and search of yours that is still running">■ Stop everything</button></header>
+<main class="compare-main">
+  <div class="compare-hero"><div><p class="eyebrow">ONE CLIP · TWO INDEPENDENT BUILDS</p><h1>1 in 1 vs 1 in 5</h1><p class="intro">One subject selection, then separate Lite builds at full capped rate and one-in-five rate. Frames are reduced before they reach SAM. Compare processing time and ghost trails. Long clips remain subject to the sampling cap.</p></div><button id="run" class="go" disabled>Run both →</button></div>
+  <section class="setup card" aria-label="Setup">
+    <div class="row"><label class="file-label">Choose a clip <input id="file" type="file" accept="video/*"></label><button id="moose" type="button">Use the moose clip</button><span id="uploadNote" class="note">Or resume with ?upload=</span></div>
+    <div class="row"><span id="setupNote" class="note">Choose a clip to begin. The largest subject Muse Spark and SAM find is followed.</span></div>
+  </section>
+  <div id="columns" class="columns l3"></div>
+</main>
+<div id="fail" class="fail" hidden role="alert"></div>
+<script type="module" src="lite3.js"></script>
+</body></html>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#04050a" />
+    <title>Admin — The Construct</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="page">
+    <div class="page-wrap">
+      <p class="page-kicker">owner only</p>
+      <h1>Approval queue</h1>
+      <p class="page-lede" id="adminLede">Published builds wait here before they hang in anyone's tesseract.</p>
+      <div class="kill-row" id="killRow" hidden>
+        <span class="side-label">service</span>
+        <button class="btn btn-quiet" id="killOn" type="button">Disable new work</button>
+        <button class="btn btn-quiet" id="killOff" type="button">Enable</button>
+        <span class="microcopy dim" id="killState">kill switch state is not readable from the API — the last action is all we know.</span>
+      </div>
+      <p class="microcopy dim" id="spendLine" hidden></p>
+      <dl class="route-facts status-grid" id="statusPanel" hidden aria-label="Service status"></dl>
+      <div class="admin-grid" id="queue"></div>
+      <p class="microcopy dim" id="queueState" role="status">Loading…</p>
+      <p class="back-row"><a class="link-btn" href="index.html">← back to the construct</a></p>
+    </div>
+    <script type="module" src="admin.js"></script>
+  </body>
+</html>

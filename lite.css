@@ -1,0 +1,19 @@
+main { margin: auto; width: 100%; }
+body:not(:has(.compare-main)) main { max-width: 1200px; padding: 36px clamp(18px, 4vw, 48px) 80px; }
+body:not(:has(.compare-main)) h1 { margin: 0; font-size: clamp(30px, 4vw, 48px); letter-spacing: -.04em; }
+body:not(:has(.compare-main)) .note { color: #c6c0b5; font-size: 14px; }
+.lite-canvas { background: #000; overflow: hidden; border-radius: 5px; }
+.lite-canvas { position: relative; }
+.lite-load { position: absolute; left: 12px; top: 10px; margin: 0; font: 11px monospace; color: #8fa4aa; }
+.lite-canvas canvas { display: block; width: 100%; touch-action: none; cursor: grab; }
+.lite-canvas canvas:active { cursor: grabbing; }
+.lite-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px; background: #151a17; }
+.lite-controls button { border-color: #3cdcff; color: #3cdcff; }
+.lite-controls input { accent-color: #3cdcff; }
+.lite-controls label { display: flex; flex: 1; align-items: center; gap: 8px; }
+.lite-controls input { width: 100%; }
+.lite-controls output, .lite-numbers { font: 11px var(--mono); }
+.lite-numbers li { display: block; color: #e5e4dc; background: #151a17; }
+.lite-numbers { margin-top: 8px; }
+.lite-controls :focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .lite-controls * { transition: none !important; } }

@@ -1,0 +1,61 @@
+# Anchored with / so gitignore-style matching (railway up) does not hit nested dirs like backend/app/gate/data.
+# Keep the build context small. Licensed defaults need gallery-seed assets,
+# fonts and the CC0 black-cat sample. Legacy experimental assets remain
+# separate; no uncleared clip is auto-loaded by the default page.
+/.planning
+/.pi
+# Local test caches and accidentally rooted scratch directories are never deploy inputs.
+/.pytest_cache
+/.ruff_cache
+/.serena
+**/__pycache__
+/*hackathon-scratch*
+/tests
+/eval
+/worker
+/compare
+/assets/clips/*
+!/assets/clips/trailcam
+/assets/clips/trailcam/*
+!/assets/clips/trailcam/cougar.mp4
+/assets/cloud
+/assets/lab
+/backend/pipeline/basic/models
+/assets/corpus/*
+!/assets/corpus/blackcat.mp4
+# the opening tesseract room embeds the grizzly scene at splats=500k: ship that one file only
+/assets/worldlabs/*
+!/assets/worldlabs/grizzly
+/assets/worldlabs/grizzly/*
+!/assets/worldlabs/grizzly/world-500k.spz
+/assets/stable/*
+!/assets/stable/grizzly
+!/assets/stable/merged-clips.json
+/backend/jobs
+/backend/pipeline/basic/.venv
+/backend/pipeline/basic/.tmp
+/backend/pipeline/basic/runs
+/backend/app/test-support
+/backend/app/gate/test
+/backend/app/gate/tools
+/data
+/data-test
+**/node_modules
+/.playwright-mcp
+*.log
+.env*
+*.pem
+*.key
+/.git
+/.gitignore
+/.stignore
+# Local instructions, diagnostics and source backups are not runtime assets.
+/AGENTS.md
+/CLAUDE.md
+/README.md
+/EXPERIMENTAL-RESEARCH.md
+/spacetime_visualizations_technical_spec.md
+/backend/app/README.md
+/embed-follow-snap-390.png
+/nul
+*.orig

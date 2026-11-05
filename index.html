@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#04050a" />
+    <title>The Construct — a video is a solid</title>
+    <meta
+      name="description"
+      content="An endless lattice of cells. Each one holds a single object lifted out of a clip and stacked along time. Travel between them; scroll to move through time."
+    />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="is-intro">
+    <canvas id="latticeCanvas" tabindex="0" role="img" aria-label="The construct: rooms of video solids. Arrow keys, the door signs or the room map move between rooms; scroll moves through time."></canvas>
+    <div class="veil" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- the title: covers loading and the way in, long enough on a first visit to read -->
+    <div class="title-card" id="titleCard">
+      <p class="title-kicker">The construct</p>
+      <h1 class="title-head">A video is a solid.</h1>
+      <p class="title-line">Every room holds one clip with all of its moments at once. <span class="for-pointer">Scroll</span><span class="for-touch">Swipe up or down</span> to move through its time.</p>
+      <p class="title-line"><span class="for-pointer">Walk through</span><span class="for-touch">Tap a sign to walk through</span> examples<span class="title-who" id="titleWho" hidden> and visitors' builds</span>, or make your own.</p>
+    </div>
+
+    <!-- edge bands: point into one to lean toward the next room; click to go there -->
+    <button class="edge edge-l" id="edgeL" data-dx="-1" aria-label="Go to the room on the left"><i></i></button>
+    <button class="edge edge-r" id="edgeR" data-dx="1" aria-label="Go to the room on the right"><i></i></button>
+    <button class="edge edge-u" id="edgeU" data-dy="1" aria-label="Go to the room above"><i></i></button>
+    <button class="edge edge-d" id="edgeD" data-dy="-1" aria-label="Go to the room below"><i></i></button>
+
+    <!-- door signs: each neighbouring room's name, hung in the space toward it -->
+    <div class="doors" id="doors" aria-hidden="true">
+      <button class="door" type="button" tabindex="-1" data-dx="-1" data-dy="0"><i></i><span class="door-text"><img class="door-thumb" alt="" decoding="async" /><b></b><small></small></span></button>
+      <button class="door" type="button" tabindex="-1" data-dx="1" data-dy="0"><i></i><span class="door-text"><img class="door-thumb" alt="" decoding="async" /><b></b><small></small></span></button>
+      <button class="door" type="button" tabindex="-1" data-dx="0" data-dy="1"><i></i><span class="door-text"><img class="door-thumb" alt="" decoding="async" /><b></b><small></small></span></button>
+      <button class="door" type="button" tabindex="-1" data-dx="0" data-dy="-1"><i></i><span class="door-text"><img class="door-thumb" alt="" decoding="async" /><b></b><small></small></span></button>
+    </div>
+
+    <header class="hud hud-top">
+      <div class="mark">
+        <span class="mark-glyph" aria-hidden="true"></span>
+        <span class="mark-word">THE CONSTRUCT<em>a video is a solid</em></span>
+      </div>
+      <nav class="studio-nav" aria-label="Main">
+        <button class="upload-cta" id="exploreCta" type="button" title="Glide to a room you have not seen">Explore</button>
+        <button class="upload-cta" id="uploadCta" type="button">Create</button>
+        <button class="upload-cta" id="myBuildsCta" type="button">My builds</button>
+      </nav>
+      <div class="coord">
+        <span class="coord-label">room</span>
+        <b id="cellCoord">+0 , +0</b>
+        <span class="backend-state" id="backendState">connecting</span>
+      </div>
+    </header>
+
+    <!-- the read head: scroll drives this, not the page -->
+    <div class="t-rail" id="tBar" role="slider" tabindex="0" aria-label="Moment in the clip (drag, scroll or use the arrow keys)" aria-valuemin="4" aria-valuemax="100" aria-valuenow="62">
+      <span class="t-label">t</span>
+      <span class="t-track"><i></i></span>
+      <b id="cutReadout">100%</b>
+    </div>
+
+    <footer class="hud hud-bottom">
+      <div class="plaque" id="plaque" aria-live="polite">
+        <span class="plaque-kicker" id="cellKicker">the construct</span>
+        <b id="cellTitle">LOADING THE CONSTRUCT</b>
+        <span class="plaque-how" id="cellHow"></span>
+        <span id="cellNote">preparing the licensed example rooms</span>
+        <span class="plaque-actions" id="plaqueActions"></span>
+      </div>
+      <div class="keys">
+        <span><kbd>scroll</kbd> move through time</span>
+        <span><kbd>drag</kbd> turn it</span>
+        <span><kbd>← → ↑ ↓</kbd> next room</span>
+      </div>
+    </footer>
+
+    <!-- the whole construct is nine rooms tiled forever: this is all of it, centred on you -->
+    <nav class="map" id="roomMap" aria-label="Rooms around you"></nav>
+
+    <!-- the cell that belongs to you -->
+    <section class="instrument-cell" id="instrumentCell" aria-label="Your cell">
+      <div class="instrument-inner">
+        <button class="studio-close" id="studioClose" type="button" aria-label="Close the studio and look at your cell">close <span aria-hidden="true">✕</span></button>
+        <section class="step is-hidden" id="stepAuth" aria-label="Sign in">
+          <p class="step-kicker">your cell — locked</p>
+          <h2>Sign in to build here.</h2>
+          <p class="microcopy" id="authNote">Builds need an account so your clips stay yours.</p>
+          <p><a class="btn btn-primary" id="signInLink" href="/signin?next=/">Sign in</a></p>
+        </section>
+
+        <section class="step" id="stepUpload">
+          <p class="step-kicker">your cell · the studio</p>
+          <h2>Turn movement into a trail.</h2>
+          <p class="maint-banner is-hidden" id="maintBanner" role="status">Maintenance is on — new builds are paused. Your clips and builds are safe.</p>
+          <p class="me-row microcopy" id="meRow" hidden>
+            <span id="meLine">signed in</span>
+            <button class="link-btn" type="button" id="signOutBtn">sign out</button>
+          </p>
+          <fieldset class="mode-pick tier-pick" id="tierPick">
+            <legend class="side-label">1 · choose a result</legend>
+            <label class="mode-card">
+              <input type="radio" name="tier" value="lite" checked />
+              <b>Lite · Ghost trail</b>
+              <small><strong>Lightest</strong> · Every pose of your subject, cut out and lined up through time. 1–3 subjects; no estimated depth.</small>
+            </label>
+            <label class="mode-card">
+              <input type="radio" name="tier" value="basic" />
+              <b>Basic · Cloud trail</b>
+              <small><strong>More detail</strong> · Your subject's moments as points in estimated depth, over its scene.</small>
+            </label>
+            <label class="mode-card">
+              <input type="radio" name="tier" value="advanced" />
+              <b>Advanced · World</b>
+              <small><strong>Most processing</strong> · The filmed place in estimated 3D, with your subject at each moment. Moving cameras stop at a cloud trail.</small>
+            </label>
+          </fieldset>
+          <details class="pipeline-info">
+            <summary>Camera and depth limitations</summary>
+            <p class="microcopy">Any camera is accepted; a fixed camera gives the clearest reference. Lite shows observed movement along time, not a 3D scan. Basic and Advanced estimate spatial structure; they cannot reveal unseen surfaces.</p>
+          </details>
+          <p class="microcopy dim" id="workerLine" hidden></p>
+          <p class="side-label step-label">2 · your clip</p>
+          <label class="drop-zone" id="dropZone" for="videoInput">
+            <input id="videoInput" type="file" accept="video/*" />
+            <span class="drop-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="drop-title" id="dropTitle">Drop a clip here</span>
+            <small id="dropHint">mp4 · mov · webm — or browse</small>
+          </label>
+          <p class="sample-row">
+            <span class="dim">no clip to hand?</span>
+            <button class="link-btn" type="button" data-sample="assets/corpus/blackcat.mp4">try the sample: a black cat, 6 s</button>
+            <button class="link-btn is-hidden" id="uploadContinue" type="button">continue to picking →</button>
+          </p>
+          <label class="consent" for="rightsBox">
+            <input type="checkbox" id="rightsBox" />
+            <span>I have the right to use this clip and send its frames to Meta&rsquo;s Model API to build my result (standard mode &mdash; not used for training). Published builds are visible to other signed-in users only after owner approval. <a href="terms.html" target="_blank" rel="noopener">Terms &amp; privacy</a></span>
+          </label>
+          <p class="microcopy dim sample-credit">Sample: Black Cat walking by Dzkouslavia (CC0) via Wikimedia Commons — <a href="https://commons.wikimedia.org/wiki/File:Black_Cat_walking.webm">source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.en">licence</a>.</p>
+          <div class="builds" id="myBuilds">
+            <p class="side-label" role="heading" aria-level="2">my builds</p>
+            <p class="microcopy dim" id="buildsEmpty">No builds yet. Choose Create to make your first trail.</p>
+            <ul class="build-list" id="buildList"></ul>
+          </div>
+          <p class="microcopy dim meta-note">Built with Meta SAM&nbsp;3.1 (object picking + tracking) · Muse&nbsp;Image (background plates) · Muse&nbsp;Spark (routing + hints). <a href="terms.html" target="_blank" rel="noopener">Terms</a><span id="adminWrap" hidden> · <a href="admin.html" id="adminLink">Admin</a></span></p>
+        </section>
+
+        <section class="step is-hidden" id="stepRoute" aria-label="Clip check">
+          <p class="step-kicker">clip check · muse spark</p>
+          <h2 id="routeTitle">Reading your clip…</h2>
+          <div class="route-card" id="routeCard" aria-live="polite"></div>
+          <div class="row-btns">
+            <button class="link-btn" id="routeBack" type="button">back</button>
+            <button class="btn btn-primary" id="routeGo" type="button" disabled>Continue to picking</button>
+          </div>
+        </section>
+
+        <section class="step is-hidden" id="stepFrame">
+          <div class="frame-stage">
+            <div class="frame-canvas-wrap" id="frameCanvasWrap">
+              <canvas id="previewCanvas"></canvas>
+              <canvas id="hoverCanvas" tabindex="0" role="application" aria-label="Object picker. Hover or tap an object, or use the object list."></canvas>
+              <div class="scan-line" aria-hidden="true"></div>
+              <div class="hover-label is-hidden" id="hoverLabel"></div>
+              <div class="context-menu is-hidden" id="contextMenu">
+                <button type="button" id="ctxGenerate">Lift this object out</button>
+              </div>
+            </div>
+            <div class="scrub-row">
+              <output id="timeReadout">00:00.0</output>
+              <input id="scrubber" type="range" min="0" max="1" step="0.01" value="0" aria-label="Seed frame" />
+            </div>
+          </div>
+
+          <aside class="frame-side">
+            <h2>Pick the subject</h2>
+            <button class="btn btn-primary btn-block" id="findObjects" type="button">Find objects on this frame</button>
+            <p class="microcopy" id="detectStatus" role="status" aria-live="polite">Scrub to a frame, then find objects. SAM&nbsp;3.1 sweeps the frame; Muse&nbsp;Spark narrows the search.</p>
+            <button class="btn btn-quiet btn-block is-hidden" id="detectRetry" type="button">Try again</button>
+            <div class="side-block objects-block">
+              <p class="side-label">objects</p>
+              <ul class="object-list" id="objectList"></ul>
+            </div>
+
+            <div class="side-block selected-block" id="selectedBlock" style="display:none">
+              <p class="side-label">selected · <span id="selectCount">0 of 3</span></p>
+              <ul class="chip-list" id="chipList"></ul>
+              <button class="btn btn-primary btn-block" id="generateButton" type="button" disabled>
+                Build it
+              </button>
+            </div>
+
+            <div class="side-block fallback-block">
+              <p class="side-label">not in the list? name it, or draw it</p>
+              <div class="prompt-row">
+                <input id="customPrompt" type="text" placeholder="name it — e.g. red kite" aria-label="Custom object prompt" />
+                <button class="btn btn-quiet" id="customPromptGo" type="button">Find</button>
+              </div>
+              <button class="btn btn-quiet btn-block" id="drawBox" type="button" aria-pressed="false" aria-describedby="boxHelp">Draw a box</button>
+              <p class="microcopy dim" id="boxHelp">Draw around your subject for one SAM request: one subject, Lite or Basic. Basic needs short, constant-rate footage and a steady camera. <span class="box-keys">Keyboard: arrow keys move the corner (Shift for fine movement); Enter sets each corner; Escape cancels.</span></p>
+            </div>
+
+            <button class="link-btn" id="cancelFrame" type="button">back</button>
+          </aside>
+        </section>
+
+        <section class="step is-hidden" id="stepWorking" aria-label="Build progress">
+          <div class="working">
+            <span class="working-stack" aria-hidden="true">
+              <i></i><i></i><i></i><i></i><i></i><i></i>
+            </span>
+            <canvas class="work-preview" id="workPreview" aria-hidden="true" hidden></canvas>
+            <p class="step-kicker" id="workingKicker">building</p>
+            <p id="workingTitle">Starting…</p>
+            <div class="progress" role="progressbar" aria-label="Build progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="workBar"><i id="workFill"></i></div>
+            <p class="work-clock" id="workClock" aria-hidden="true"></p>
+            <p class="microcopy dim" id="workingNote">Queued.</p>
+            <ol class="work-log" id="workLog" aria-label="Finished stages"></ol>
+            <div class="work-fail" id="workFail" hidden>
+              <button class="btn btn-primary" id="workRetry" type="button">Pick again</button>
+              <button class="link-btn" id="workNewClip" type="button">try another clip</button>
+            </div>
+            <div class="work-away" id="workAway">
+              <button class="btn btn-quiet" id="workingWalk" type="button">Walk the construct while it builds</button>
+              <p class="microcopy dim">It keeps building and hangs in your cell when it is ready.</p>
+              <button class="link-btn" id="workingBack" type="button">or wait in My builds</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="step is-hidden" id="stepDone" aria-label="Finished build">
+          <p class="step-kicker" id="doneKicker">done</p>
+          <h2 id="doneTitle">Your solid is ready.</h2>
+          <img class="done-thumb" id="doneThumb" alt="" hidden />
+          <p class="done-what" id="doneWhat"></p>
+          <p class="microcopy" id="doneMeta"></p>
+          <ul class="chip-list static" id="doneProv" aria-label="Models used"></ul>
+          <div class="row-btns">
+            <button class="btn btn-primary" id="doneSee" type="button">See it in your cell</button>
+            <button class="btn btn-quiet" id="doneOpen" type="button">Open viewer</button>
+            <button class="btn btn-quiet" id="donePublish" type="button">Publish to the construct</button>
+          </div>
+          <p class="microcopy dim" id="doneNote"></p>
+          <button class="link-btn" id="doneBack" type="button">back to my builds</button>
+        </section>
+      </div>
+    </section>
+
+    <!-- a finished 3D build: progress while it cooks, then a way back into it -->
+    <button class="build-chip is-hidden" id="buildChip" type="button"></button>
+    <div class="viewer is-hidden" id="viewer" role="dialog" aria-modal="true" aria-label="3D view of your clip">
+      <iframe id="viewerFrame" title="3D view of your clip" allow="fullscreen"></iframe>
+      <button class="viewer-close" id="viewerClose" type="button" aria-label="Close the 3D view">close ✕</button>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <noscript>
+      <p class="noscript">
+        The Construct is a rendered space and needs JavaScript. The pipeline behind
+        it — SAM 3.1 segmentation stacked along time — is described in the README.
+      </p>
+    </noscript>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three/build/three.module.js"
+        }
+      }
+    </script>
+    <script type="module" src="site.js"></script>
+  </body>
+</html>

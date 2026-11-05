@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spacetime — three ways to lay time out as space</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="lab.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <div class="title">
+        <b>SPACETIME</b>
+        <span>4D trail · 3.5D chrono-extrusion · video volume</span>
+      </div>
+      <div class="transport">
+        <button id="play" type="button" aria-label="Play or pause">❚❚</button>
+        <input id="scrub" type="range" min="0" max="1" step="0.001" value="0" aria-label="Clip time" />
+        <output id="clock">0.00s</output>
+      </div>
+      <div class="verdict" id="verdict">loading…</div>
+    </header>
+
+    <p class="intro">
+      Three renderings of one trail-cam clip, built from
+      <a href="spacetime_visualizations_technical_spec.md">the technical spec</a>.
+      The top bar drives all three clocks; drag a panel to orbit, scroll to zoom.
+    </p>
+
+    <main class="grid">
+      <section class="panel" data-view="cloud">
+        <canvas></canvas>
+        <div class="hud"></div>
+        <div class="cap"><b>1 · 4D volumetric point-cloud trail</b><span>Every frame's bear is lifted into one fixed world and merged into a single vertex buffer (~15% density). A shader compares each point's <em>a_frameId</em> to the playhead: points within Δt glow cyan at α 1.0, the rest sit at α 0.08. The wireframe pyramid is the recording camera, its quad the live frame.</span></div>
+      </section>
+
+      <section class="panel" data-view="extrude">
+        <canvas></canvas>
+        <div class="hud"></div>
+        <div class="cap"><b>2 · 3.5D segmented chrono-extrusion</b><span>Cut-out + depth for the last 64 frames live in a texture-array ring buffer (one layer written per frame, nothing shifted). 64 instanced 256×144 grids are spaced along a direction vector, relief-displaced by depth and faded by α·e<sup>−λi</sup>; i = 0 is the newest.</span></div>
+      </section>
+
+      <section class="panel" data-view="volume">
+        <canvas></canvas>
+        <div class="hud"></div>
+        <div class="cap"><b>3 · Spatiotemporal video volume</b><span>The clip stacked along Z as a 256×144×80 <em>sampler3D</em> and ray-marched (256 steps, α 0.012). The frame being played is a near-opaque cross-section scrubbing through the cube; frames still to come fog the view in front of it.</span></div>
+      </section>
+    </main>
+
+    <script type="importmap">
+      { "imports": { "three": "./vendor/three-0.180.0/three.module.js" } }
+    </script>
+    <script type="module" src="spacetime.js"></script>
+  </body>
+</html>

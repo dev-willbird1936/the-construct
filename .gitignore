@@ -1,0 +1,7 @@
+node_modules/
+.env*
+*.log
+data/
+data-test/
+backend/jobs/
+__pycache__/

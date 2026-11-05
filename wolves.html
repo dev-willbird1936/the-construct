@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#06090b" />
+    <title>Wolves through time — The Construct</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="wolves.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="back" href="/?clip=wolves" aria-label="Back to the wolf tesseract">← <span>WOLF TESSERACT</span></a>
+      <div class="heading">
+        <span class="eyebrow">three targets · one trail-cam clip</span>
+        <h1>Wolves through time</h1>
+        <p>Three tracked wolves inside a generated 3D forest. Orbit the world; scrub their separate time-volumes.</p>
+      </div>
+      <a class="source-link" href="https://x.com/Trail_Cams/status/2106504576014659770" target="_blank" rel="noreferrer">SOURCE CLIP ↗</a>
+    </header>
+
+    <main class="layout">
+      <section class="viewer-card" aria-label="Wolf time-volume viewer">
+        <div class="viewer-head">
+          <div class="targets" role="group" aria-label="Choose a wolf target">
+            <button type="button" data-target="0" aria-pressed="false">01 · largest</button>
+            <button type="button" data-target="1" aria-pressed="true">02 · middle</button>
+            <button type="button" data-target="2" aria-pressed="false">03 · smallest</button>
+          </div>
+          <div class="world-controls">
+            <button class="world-toggle" id="worldToggle" type="button" aria-pressed="true" disabled>Loading 3D environment…</button>
+            <span class="world-status" id="worldStatus" role="status">Marble 1.1 · loading private world</span>
+          </div>
+        </div>
+        <div class="stage" id="stage">
+          <canvas id="volumeCanvas" aria-label="Orbitable wolf cutouts stacked through time inside a generated 3D environment"></canvas>
+          <div class="loading" id="loading" role="status">Loading target volume…</div>
+          <div class="stage-caption" id="stageCaption">drag to orbit · scroll to zoom · scrub to move through time</div>
+        </div>
+        <div class="transport">
+          <button class="play" id="playBtn" type="button" aria-label="Play target">Play</button>
+          <input id="timeSlider" type="range" min="0" max="0" step="1" value="0" aria-label="Time slice" />
+          <output id="clock">—</output>
+          <button class="stack" id="stackBtn" type="button" aria-label="Show full time stack">Full stack</button>
+          <button class="reset" id="resetBtn" type="button" aria-label="Reset camera">Reset view</button>
+        </div>
+        <div class="transport-note"><span id="sliceLabel">Loading slices…</span><span>← earlier · later →</span></div>
+      </section>
+
+      <aside class="details" aria-live="polite">
+        <div class="detail-kicker">SELECTED TRACK</div>
+        <h2 id="targetTitle">Wolf 2</h2>
+        <p class="target-note" id="targetNote">Loading target metadata…</p>
+        <div class="quality" id="qualityNote"></div>
+        <a id="depthViewLink" class="depth-link" href="stable.html?clip=wolf2">
+          <b>Open estimated-depth scene ↗</b>
+          <span>Depth shell + World Labs background; not a complete 3D scan.</span>
+        </a>
+
+        <dl class="stats">
+          <div><dt>Tracking match</dt><dd id="matchScore">—</dd></div>
+          <div><dt>Retained slices</dt><dd id="sliceCount">—</dd></div>
+          <div><dt>Observed span</dt><dd id="timeSpan">—</dd></div>
+          <div><dt>Seed crop</dt><dd id="seedCrop">—</dd></div>
+          <div><dt>Atlas</dt><dd id="fileSize">—</dd></div>
+        </dl>
+
+        <div class="run-card">
+          <div class="detail-kicker">TRACKING PIPELINE</div>
+          <p><b>6m 23s</b> across three Meta SAM tracks</p>
+          <p><b>$1.0506 estimated</b> at Meta’s published rates<br /><small>Not checked against a billing receipt.</small></p>
+          <a href="https://dev.meta.ai/docs/pricing-rate-limits" target="_blank" rel="noreferrer">Meta SAM pricing ↗</a>
+        </div>
+
+        <div class="run-card world-card">
+          <div class="detail-kicker">WORLD LABS · MARBLE 1.1</div>
+          <p><b>Generated 3D forest clearing</b> from the source clip; 1,600 credits, about $1.28 at the last recorded rate.</p>
+          <p><b>World Labs operation:</b> 10m 34s; Meta + World Labs processing totaled about 16m 57s, excluding trim, upload and viewer work.</p>
+          <p><b>Combined estimate:</b> about $2.33, not a billing-dashboard receipt.</p>
+          <p class="world-caveat">Approximate generated scenery, not a measured depth scan. The model caption calls the animals “bears”; treat background wildlife as synthetic or misidentified. The gallery and two other tesseract cells keep separate 2.5D cutouts; the depth-shell scene uses estimated, regularised relief rather than complete 3D anatomy.</p>
+        </div>
+
+        <p class="method-note">The original is a 30.093s, 901-frame clip; the World Labs input was trimmed to 29.93s to fit its video limit. Each track starts at 8s; forward tracking caps at 320 frames (~10.7s). Wolf 1 and Wolf 3 remain low-duration 2.5D atlas tracks in the tesseract; the linked depth-shell views are estimated single-camera reconstructions, not complete 3D meshes.</p>
+      </aside>
+    </main>
+
+    <script type="importmap">
+      { "imports": {
+        "three": "./vendor/three-0.180.0/three.module.js",
+        "three/addons/": "./vendor/three/examples/jsm/"
+      } }
+    </script>
+    <script type="module" src="wolves.js"></script>
+  </body>
+</html>

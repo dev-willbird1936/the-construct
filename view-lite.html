@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#04050a" />
+    <title>Lite solid — The Construct</title>
+    <meta name="description" content="A spacetime solid: one object's cut-outs stacked along time. Scroll to move through it." />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* Soft vignette so the row sits in a room, not on a page. Lite-owned. */
+      #stage { position: relative; }
+      #stage::after {
+        content: ""; position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(ellipse at 50% 42%, rgba(0,0,0,0) 52%, rgba(0,0,0,0.5) 100%);
+      }
+      #stageBar { flex-wrap: wrap; }
+      /* First paint: .stage-bar's display:flex beat [hidden], so dead
+         Play/slider/Reset controls showed while loading; and the loading box
+         was ~150px tall, so the page jumped when the stage opened. Hold the
+         stage at its open height (the canvas rule) until then. */
+      #stageBar[hidden] { display: none; }
+      #stageState { min-height: min(62vh, 560px); box-sizing: border-box; }
+      #poseTick { font-variant-numeric: tabular-nums; white-space: nowrap; }
+      /* Still-view toggle + panel (Lane D proposal, Lite-owned). */
+      .seg { display: inline-flex; gap: 4px; align-items: center; }
+      #viewSeg[hidden] { display: none; }
+      #stageBar.still-mode > :not(#viewSeg) { display: none; }
+      .seg-btn[aria-pressed="true"] { outline: 2px solid #f2a63b; outline-offset: -2px; }
+      .seg-btn:focus-visible { outline: 2px solid #f2a63b; outline-offset: 2px; }
+      #stillWrap {
+        position: absolute; inset: 0; margin: 0; display: flex;
+        flex-direction: column; align-items: center; justify-content: center;
+        gap: 6px; background: #020304; padding: 12px; overflow: hidden;
+      }
+      #stillWrap[hidden] { display: none; }
+      #stillImg { max-width: 100%; max-height: calc(100% - 34px); object-fit: contain; }
+      #stillCap, #stillMsg { margin: 0; max-width: 100%; overflow-wrap: anywhere; }
+    </style>
+  </head>
+  <body class="page">
+    <div class="page-wrap" id="pageWrap">
+      <p class="page-kicker">lite · solid</p>
+      <h1 id="vTitle">A spacetime solid</h1>
+      <p class="page-lede" id="vLede">Cut-outs of one object, stacked along time. Scroll to move through it; drag to turn it a little.</p>
+      <div class="stage" id="stage">
+        <div class="stage-state" id="stageState" role="status">
+          <span id="stageText">Loading the solid…</span>
+        </div>
+        <figure id="stillWrap" hidden>
+          <img id="stillImg" alt="" />
+          <p id="stillMsg" class="prov" role="status"></p>
+          <figcaption id="stillCap" class="prov"></figcaption>
+        </figure>
+      </div>
+      <div class="stage-bar" id="stageBar" hidden>
+        <div class="seg" id="viewSeg" role="group" aria-label="View" hidden>
+          <button class="btn btn-quiet seg-btn" id="view3dBtn" type="button" aria-pressed="true">3D</button>
+          <button class="btn btn-quiet seg-btn" id="viewStillBtn" type="button" aria-pressed="false">Still</button>
+        </div>
+        <button class="btn btn-quiet" id="playBtn" type="button" aria-pressed="false">Play</button>
+        <input id="timeSlider" type="range" min="0" max="1000" value="1000" step="1" aria-label="Time through the solid" />
+        <output id="timeOut" for="timeSlider">100%</output>
+        <span class="prov" id="timeSec" aria-label="Time in seconds"></span>
+        <span class="prov" id="poseTick" aria-label="Current pose"></span>
+        <button class="btn btn-quiet" id="resetBtn" type="button">Reset view</button>
+      </div>
+      <ul class="chip-list static" id="vChips" aria-label="Provenance"><li>Loading provenance…</li></ul>
+      <p class="prov" id="vProv">via the construct</p>
+      <p class="back-row"><a class="link-btn" href="index.html">← back to the construct</a></p>
+    </div>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three/build/three.module.js"
+        }
+      }
+    </script>
+    <script type="module" src="view-lite.js"></script>
+  </body>
+</html>

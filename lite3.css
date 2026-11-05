@@ -1,0 +1,21 @@
+.columns.l3 { display: grid; grid-template-columns: repeat(var(--column-count, 2), minmax(0, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 1000px) { .columns.l3 { grid-template-columns: 1fr; } }
+.l3col { --tier: #3cdcff; border: 1px solid #3b3d38; border-top: 3px solid var(--tier); border-radius: 8px; background: #101310; padding: 16px; display: grid; gap: 10px; min-width: 0; }
+.l3col:nth-child(2) { --tier: #ffc828; }
+.l3col:nth-child(3) { --tier: #ff5aa0; }
+.l3col header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.l3col h2 { margin: 0; font-size: 20px; color: var(--tier); letter-spacing: .03em; }
+.l3col time, .l3col .badge { font: 11px var(--mono); color: var(--tier); }
+.l3col .badge { justify-self: start; border: 1px solid var(--tier); border-radius: 20px; padding: 4px 10px; }
+.l3col .sub { margin: 0; color: #c6c0b5; font: 12px var(--mono); }
+.l3col .meter { height: 3px; background: #262822; border-radius: 2px; overflow: hidden; }
+.l3col .meter i { display: block; height: 100%; width: 0; background: var(--tier); }
+.l3col .live { width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 5px; display: block; }
+.l3col .viewer { min-width: 0; }
+.l3col .lite-controls button, .l3col .lite-controls output { color: var(--tier); }
+.l3col .lite-controls button { border-color: var(--tier); }
+.l3col .lite-controls input { accent-color: var(--tier); }
+.l3col .note { margin: 0; }
+.l3col .lite-controls label { flex: 1 1 100%; order: 3; }
+.l3col .viewer { overflow: visible; max-height: none; height: auto; }
+.l3col .lite-numbers li { white-space: normal; }

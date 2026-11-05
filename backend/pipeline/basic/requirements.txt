@@ -1,0 +1,6 @@
+numpy>=1.24
+pillow>=10.0
+# contrib (BSD, same code as headless + ximgproc for the guided-filter matte).
+# It replaces opencv-python-headless: the two must never be installed together.
+opencv-contrib-python-headless>=4.8
+onnxruntime>=1.17

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Build your clip — The Construct</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="live.css" />
+    <link rel="stylesheet" href="pick.css" />
+  </head>
+  <body>
+    <header class="top">
+      <a href="index.html" aria-label="Back to the construct">← the construct</a>
+      <a href="compare.html">Compare tiers</a>
+      <b>ADVANCED · LIVE</b>
+      <span id="headline">Choose a clip to see its movement.</span>
+      <span id="clock" class="clock" aria-live="off"></span>
+      <button type="button" id="stopAll" class="stop" title="Stop every build and search of yours that is still running">■ Stop everything</button>
+    </header>
+
+    <div class="layout">
+      <nav id="rail" aria-label="Steps"></nav>
+
+      <main id="steps">
+        <!-- 1 · clip -->
+        <section class="card" id="card-upload" data-step="upload">
+          <h2><span class="n">1</span> Your clip <small class="t"></small></h2>
+          <div class="body">
+            <label class="drop" id="drop">
+              <input id="file" type="file" accept="video/*" />
+              <b>Drop a video here, or click to choose</b>
+              <span>Any camera works. A fixed camera is fastest and works best: a trail camera, a tripod, or a phone leaned on something.</span>
+            </label>
+            <p class="row"><button id="useGrizzly" type="button" class="ghost">Use the grizzly river crossing</button><span id="uploadNote" class="note"></span></p>
+            <div id="camera" class="chips"></div>
+          </div>
+        </section>
+
+        <!-- 2 · start frame -->
+        <section class="card" id="card-frame" data-step="frame" hidden>
+          <h2><span class="n">2</span> Start frame <small class="t"></small></h2>
+          <div class="body">
+            <video id="preview" muted playsinline preload="auto"></video>
+            <div class="scrub">
+              <button id="back" type="button" aria-label="One frame back">‹</button>
+              <input id="time" type="range" min="0" max="1" step="0.001" value="0" aria-label="Start frame" />
+              <button id="fwd" type="button" aria-label="One frame forward">›</button>
+              <output id="timeOut">0.00 s</output>
+            </div>
+            <p class="row"><button id="useFrame" type="button" class="go">Use this frame</button><span class="note">The clip starts here. Everything earlier is left out.</span></p>
+          </div>
+        </section>
+
+        <!-- 3 · targets -->
+        <section class="card" id="card-pick" data-step="pick" hidden>
+          <h2><span class="n">3</span> Choose your subjects <small class="t"></small></h2>
+          <div class="body">
+            <div class="pickgrid">
+              <div class="stagebox" id="pickBox">
+                <img id="pickImg" alt="The chosen frame" />
+                <canvas id="pickMasks"></canvas>
+                <canvas id="pickHeat"></canvas>
+                <div id="pickTip" class="tip" hidden></div>
+              </div>
+              <aside>
+                <div class="who"><span class="k">Muse Spark</span><div id="names" class="chips"><i>waiting</i></div><p id="scene" class="note"></p></div>
+                <div class="who"><span class="k">SAM 3.1</span><div id="concepts" class="chips"><i>waiting</i></div></div>
+                <div class="who"><span class="k" id="dinoName">DINOv3</span><p id="dinoNote" class="note">waiting</p>
+                  <div class="seg" id="dinoView" hidden><button data-v="frame" class="on" type="button">frame</button><button data-v="pca" type="button">what it sees</button><button data-v="heat" type="button">alike</button></div></div>
+                <div class="who"><span class="k">Found</span><ul id="objects" class="objs"></ul></div>
+                <p class="row"><button id="similar" type="button" class="ghost" disabled>Add everything alike</button></p>
+                <p class="row"><button id="build" type="button" class="go" disabled>Build</button></p>
+                <p id="pickNote" class="note"></p>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4 · tracking -->
+        <section class="card" id="card-track" data-step="track" hidden>
+          <h2><span class="n">4</span> Follow and cut out, every frame <small class="t"></small></h2>
+          <div class="body">
+            <div class="stagebox wide" id="trackBox"><canvas id="trackBase"></canvas><canvas id="trackGhosts"></canvas><canvas id="trackLive"></canvas></div>
+            <p class="track-legend">Faded cut-outs show earlier positions; the bright cut-out is the current frame. Arrows in the heading view show direction of travel.</p>
+            <div class="meter"><i id="trackBar"></i></div>
+            <p id="trackNote" class="note"></p>
+            <div id="trackChips" class="chips"></div>
+          </div>
+        </section>
+
+        <!-- 5 · the empty scene and its depth -->
+        <section class="card" id="card-scene" data-step="scene" hidden>
+          <h2><span class="n">5</span> The empty scene, and its depth <small class="t"></small></h2>
+          <div class="body">
+            <p class="note live"></p>
+            <div class="tri">
+              <figure><img id="plateImg" alt="The scene with every animal removed" /><figcaption>the scene with the animals taken out</figcaption></figure>
+              <figure><img id="depthImg" alt="Depth Anything 3 depth" /><figcaption>Depth Anything 3 · warm is near</figcaption></figure>
+              <figure><img id="groundImg" alt="The fitted ground" /><figcaption>the ground it found</figcaption></figure>
+            </div>
+            <div id="sceneChips" class="chips"></div>
+          </div>
+        </section>
+
+        <!-- 6 · heading -->
+        <section class="card" id="card-heading" data-step="heading" hidden>
+          <h2><span class="n">6</span> Which way each subject goes <small class="t"></small></h2>
+          <div class="body">
+            <p class="note live"></p>
+            <figure class="one"><img id="motionImg" alt="Each subject's path drawn on the scene" /></figure>
+            <ul id="headings" class="heads"></ul>
+          </div>
+        </section>
+
+        <!-- 7 · cloud -->
+        <section class="card" id="card-cloud" data-step="cloud" hidden>
+          <h2><span class="n">7</span> The first cloud trail <small class="t"></small></h2>
+          <div class="body">
+            <p class="note live"></p>
+            <div class="stagebox wide cloudbox" id="cloudBox"><canvas id="cloudView"></canvas><div class="hud" id="cloudHud"></div></div>
+            <p class="note"><kbd>drag</kbd> orbit · <kbd>scroll</kbd> zoom · <kbd>right-drag</kbd> pan. Each subject stands at its own distance, spaced along the path it walked.</p>
+          </div>
+        </section>
+
+        <!-- 8 · shells -->
+        <section class="card" id="card-shells" data-step="shells" hidden>
+          <h2><span class="n">8</span> Depth shells, one per moment <small class="t"></small></h2>
+          <div class="body">
+            <p class="note live"></p>
+            <div class="meter"><i id="shellBar"></i></div>
+            <p id="shellNote" class="note"></p>
+            <div id="shellGrid" class="shells"></div>
+          </div>
+        </section>
+
+        <!-- 9 · water -->
+        <section class="card" id="card-water" data-step="water" hidden>
+          <h2><span class="n">9</span> The live footage, animals painted out <small class="t"></small></h2>
+          <div class="body">
+            <p class="note live"></p>
+            <figure class="one"><img id="waterImg" alt="The footage with every animal painted out" /></figure>
+            <div class="meter"><i id="waterBar"></i></div>
+            <div id="waterStrip" class="strip"></div>
+          </div>
+        </section>
+
+        <!-- 10 · done -->
+        <section class="card" id="card-done" data-step="done" hidden>
+          <h2><span class="n">10</span> The world <small class="t"></small></h2>
+          <div class="body">
+            <p id="doneNote" class="note"></p>
+            <div id="gate" class="chips"></div>
+            <iframe id="world" title="The finished world" allow="fullscreen"></iframe>
+            <p class="row"><a id="openWorld" class="go as-link" target="_blank" rel="noopener">Open on its own ↗</a></p>
+            <table id="timings" class="timings"></table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="fail" id="fail" hidden></div>
+
+    <script type="importmap">
+      { "imports": { "three": "./vendor/three/build/three.module.js" } }
+    </script>
+    <script type="module" src="live.js"></script>
+  </body>
+</html>

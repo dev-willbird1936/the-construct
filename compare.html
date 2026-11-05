@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>One clip, three tiers — live comparison</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="live.css"><link rel="stylesheet" href="lite.css"><link rel="stylesheet" href="compare.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.js"}}</script>
+</head>
+<body>
+<header class="top"><a href="live.html">← advanced live</a><b>THREE TIERS · LIVE</b><span id="shared">Upload a clip · start frame 0.00 s · subjects not chosen</span><time id="overall">0.0 s</time><button type="button" id="stopAll" class="stop" title="Stop every build and search of yours that is still running">■ Stop everything</button></header>
+<main class="compare-main">
+  <div class="compare-hero"><div><p class="eyebrow">ONE CLIP · THREE PERSPECTIVES</p><h1>One clip. Three ways to see it.</h1><p class="intro">One real build, three tiers. Lite and Basic show where the same pipeline would stop; Advanced takes it all the way.</p></div><button id="run" class="go" disabled>Run all three →</button></div>
+  <section class="setup card" aria-label="Shared setup">
+    <div class="row"><label class="file-label">Choose a clip <input id="file" type="file" accept="video/*"></label><button id="moose" type="button">Use the moose clip</button><span id="uploadNote" class="note">Or resume with ?upload=</span></div>
+    <div id="frameSetup" hidden><video id="preview" muted playsinline preload="metadata"></video><div class="scrub"><label for="time">Start frame</label><input id="time" type="range" min="0" value="0"><output id="timeOut">0.00 s</output></div></div>
+    <div class="row"><button id="choose" disabled>Choose subjects first</button><span id="setupNote" class="note">Choose a clip to begin.</span></div>
+    <div id="picker" hidden><div class="pickgrid"><div class="stagebox"><img id="pickImg" alt="Start frame"><canvas id="pickMasks"></canvas></div><aside><div><b>Muse Spark</b><p id="names" class="note">Waiting</p></div><div><b>SAM 3.1</b><p id="concepts" class="note">Waiting</p></div><div><b>DINO</b><p id="dino" class="note">Waiting</p></div><ul id="objects" class="objs"></ul><button id="build" class="go" disabled>Run with chosen subjects</button><p id="pickNote" class="note"></p></aside></div></div>
+  </section>
+  <section class="timeline" aria-label="Shared build timeline"><div class="timeline-heading"><div><p class="eyebrow">THE SAME CLOCK</p><h2>Time to each tier</h2></div><span>0 s → <span id="timeline-end">0.0 s</span></span></div><div id="timeline-rows"></div></section>
+  <h2 id="results" hidden>Results · Explore each tier</h2>
+  <div id="columns" class="columns"></div>
+</main>
+<div id="fail" class="fail" hidden role="alert"></div>
+<script type="module" src="compare.js"></script>
+</body></html>

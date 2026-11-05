@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Space + time — experimental reconstruction viewer</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="stable.css" />
+  </head>
+  <body>
+    <canvas id="view" aria-label="Estimated scene depth and recorded subject poses" aria-busy="true"></canvas>
+
+    <header class="top">
+      <span class="eyebrow">Experimental / recorded space</span>
+      <b>Space + time</b>
+      <span id="blurb">Recorded moments, held in space</span>
+    </header>
+
+    <nav class="modes" aria-label="Viewer controls">
+      <select id="clipPick" aria-label="Clip">
+        <option value="walker">walker · handheld</option>
+        <option value="horse">horse · camera follows</option>
+        <option value="cat">cat · camera follows</option>
+        <option value="grizzly">grizzly · trail cam</option>
+        <option value="wolf1">wolf 1 · trail cam</option>
+        <option value="wolf2">wolf 2 · trail cam</option>
+        <option value="wolf3">wolf 3 · trail cam</option>
+        <option value="cougar">cougar · trail cam</option>
+        <option value="blackbear">black bear · trail cam</option>
+      </select>
+      <span class="sep"></span>
+      <button type="button" data-cam="cinematic" aria-pressed="false">cinematic</button>
+      <button type="button" data-cam="recorded" aria-pressed="false">through the lens</button>
+      <button type="button" data-cam="orbit" aria-pressed="true" title="Orbit near the recording direction; side and rear views are limited">bounded orbit</button>
+      <span class="sep"></span>
+      <button type="button" id="trailBtn" aria-pressed="true" title="Natural-colour observed poses; earlier moments fade">pose trail</button>
+      <select id="trailStyle" aria-label="Trail style" title="Dense flow or fewer, separated observations">
+        <option value="flow">flow · dense</option>
+        <option value="spaced">spaced poses</option>
+      </select>
+      <button type="button" id="rigBtn" aria-pressed="false" title="Show the recording camera and its estimated path">camera path</button>
+      <button type="button" id="worldBtn" hidden aria-pressed="false" title="Generated 360° environment with natural-colour recorded subject poses">World Labs world</button>
+      <select id="worldDetail" hidden aria-label="Background detail" title="Existing cached assets only; full detail needs a larger download and more GPU memory, not generation credits">
+        <option value="auto">detail · auto</option>
+        <option value="100k">detail · light</option>
+        <option value="500k">detail · balanced</option>
+        <option value="full">detail · full</option>
+      </select>
+      <button type="button" id="mergedBtn" aria-pressed="false" title="Use the existing voxel-deduplicated environment bake">merged world</button>
+      <button type="button" id="resetBtn" title="Return bounded orbit to its source-relative view">reset view</button>
+    </nav>
+
+    <figure class="inset">
+      <video id="clip" muted playsinline></video>
+      <figcaption id="caption">source</figcaption>
+    </figure>
+
+    <aside class="motion" id="motion">measuring…</aside>
+
+    <footer class="hud">
+      <div class="row">
+        <button type="button" id="playBtn" aria-label="Pause recording">Pause</button>
+        <button type="button" id="prevBtn" aria-label="Previous observed frame" title="Previous observed frame">‹</button>
+        <button type="button" id="nextBtn" aria-label="Next observed frame" title="Next observed frame">›</button>
+        <output id="clock" aria-live="off">00:00.00</output><small>/</small><output id="total">00:00.00</output>
+        <span class="grow"></span>
+        <b id="dir">▸▸ forward</b><output id="rate">+1.00×</output>
+      </div>
+      <input class="bar" id="bar" type="range" min="0" max="1" step="0.001" value="0" aria-label="Recording time" />
+      <div class="ticks" id="ticks"></div>
+      <p class="keys"><kbd>scroll</kbd> run time · <kbd>space</kbd> play/pause · <kbd>← →</kbd> observed frames · <kbd>left-drag</kbd> bounded orbit · <kbd>1 2 3</kbd> cameras</p>
+      <p class="note">Estimated, regularised depth · background fill is approximate · original colours · earlier poses fade <span id="status" role="status"></span></p>
+    </footer>
+
+    <div class="loading" id="loading" role="status" aria-live="polite"><b>Opening the reconstruction</b><p>Loading scene surfaces and recorded poses…</p></div>
+
+    <script src="stable-bootstrap.js"></script>
+    <script type="module" src="stable-entry.js"></script>
+  </body>
+</html>

@@ -1,0 +1,101 @@
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("assets/fonts/space-grotesk-var.woff2") format("woff2-variations");
+  font-weight: 300 700;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("assets/fonts/jetbrains-mono-var.woff2") format("woff2-variations");
+  font-weight: 400 700;
+}
+
+:root {
+  --ink: #eee8dc;
+  --muted: #a9a08c;
+  --dim: #6f685a;
+  --glow: #ffd9a8;
+  --line: rgba(238, 232, 220, 0.12);
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #0a0906;
+  color: var(--ink);
+  font: 14px/1.5 "Space Grotesk", system-ui, sans-serif;
+}
+a { color: var(--glow); }
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 28px;
+  align-items: center;
+  padding: 14px 24px;
+  background: rgba(10, 9, 6, 0.92);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(6px);
+}
+.title { display: grid; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
+.title b { color: var(--glow); font-size: 12px; letter-spacing: 0.3em; }
+.title span { color: var(--muted); }
+
+.transport { display: flex; align-items: center; gap: 14px; }
+.transport button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--glow);
+  font-size: 11px;
+  cursor: pointer;
+}
+.transport input { flex: 1; accent-color: var(--glow); }
+.transport output, .verdict { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.transport output { min-width: 56px; }
+.verdict { color: var(--glow); letter-spacing: 0.06em; }
+
+.intro { max-width: 900px; margin: 18px 24px 6px; color: var(--muted); font-size: 13px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+  gap: 14px;
+  padding: 14px 24px 40px;
+}
+
+.panel {
+  position: relative;
+  border: 1px solid var(--line);
+  background: #000;
+}
+.panel canvas { display: block; width: 100%; aspect-ratio: 16 / 9; cursor: grab; touch-action: none; }
+.panel canvas:active { cursor: grabbing; }
+.cap { display: grid; gap: 3px; padding: 11px 14px 13px; border-top: 1px solid var(--line); }
+.cap b { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--glow); font-weight: 500; }
+.cap span { color: var(--muted); font-size: 12.5px; }
+.cap em { color: var(--ink); font-style: normal; }
+
+.hud {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--ink);
+  text-shadow: 0 0 4px #000, 0 0 10px #000;
+  pointer-events: none;
+  white-space: pre;
+}
+.hud b { color: var(--glow); font-weight: 600; }
+
+@media (max-width: 640px) {
+  .grid { grid-template-columns: 1fr; padding: 10px; }
+  .bar { grid-template-columns: 1fr; gap: 8px; }
+}
