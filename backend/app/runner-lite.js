@@ -573,7 +573,7 @@ export async function runLiteJob({ db, config, dataDir, fileIdCache, job, upload
   // still: one pose whose live loop plays the clip. It used to fail here,
   // after tracking was paid for (2 of 5 unseen clips in the generalisation
   // loop). The static line stays as a guard if the pack could not do that.
-  packed = await packChronoAtlas(allSlices, { cell: 336, preserveAlpha: Boolean(snapshot), edgeBottom: osd?.cutY || null, staticStill: true });
+  packed = await packChronoAtlas(allSlices, { cell: 336, preserveAlpha: Boolean(snapshot), edgeBottom: osd?.cutY || null, staticStill: true, poseStride: 3 });
   if (packed.motion && packed.motion.static && !packed.still) {
     throw new Error("This subject barely moves, so there is no sequence to show. Try Basic or Advanced.");
   }

@@ -81,6 +81,17 @@ export async function createApp(options = {}) {
   gate.installGate(app, { dataDir });
 
   app.use("/api", express.json({ limit: "256kb" }), api);
+  // The gallery's examples follow the enabled result types: a paused tier's example rooms stay empty.
+  app.get("/assets/gallery-seed.json", (req, res, next) => {
+    const tiers = config.enabledTiers || ["lite", "basic", "advanced"];
+    if (tiers.length === 3) return next();
+    try {
+      const seed = JSON.parse(fs.readFileSync(path.join(siteRootFor(import.meta.url), "assets", "gallery-seed.json"), "utf8"));
+      seed.examples = (seed.examples || []).filter((e) => tiers.includes(e.tier));
+      res.setHeader("Cache-Control", "no-cache");
+      return res.json(seed);
+    } catch (e) { return next(); }
+  });
   installStatic(app, { siteRoot: siteRootFor(import.meta.url), specimensDir: path.join(dataDir, "specimens") });
 
   // JSON 404/500 for anything API that fell through.

@@ -69,6 +69,8 @@ export function loadConfig() {
     // default; enable only with WORKER_ADVANCED_SPECIMEN=1 on the GPU worker.
     // Advanced built in front of the user (live.html) where this server has the GPU and the world builder; LIVE_ADVANCED=0 turns it off.
     liveAdvanced: str("LIVE_ADVANCED", "1") === "1",
+    // Result types offered to visitors (ENABLED_TIERS=lite pauses Basic and Advanced; existing builds stay viewable).
+    enabledTiers: str("ENABLED_TIERS", "lite,basic,advanced").split(",").map((t) => t.trim()).filter((t) => ["lite", "basic", "advanced"].includes(t)),
     // Only the loopback demo opts in; the normal server retains one live build per user.
     concurrentLiveBuilds: false,
     advancedBoxSelection: str("ADVANCED_BOX_SELECTION", "") === "1",

@@ -15,6 +15,12 @@ const ROWS = 20;           // sideways threads per pose, one per row band
 const COLS = 7;            // up/down threads per pose, one per column band
 const TRAIL = 1.0;         // poses behind the head that still shed (fading)
 const ALPHA_IN = 128;      // atlas alpha that counts as "inside the subject"
+// The threads twinkle: each shimmers slowly on its own phase and rate, and now
+// and then a glint of light runs out along one, like light catching a thread.
+// All of it is in the shader from per-thread random values and the frame
+// clock; under reduced motion the threads hold still at an even brightness.
+const STILL = typeof window !== "undefined" && typeof window.matchMedia === "function"
+  && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // Threads only need a silhouette to start from, so poses are read from a small
 // copy (about DUST_SIDE pixels a pose). Drawing the full image into a canvas
@@ -141,7 +147,7 @@ export async function buildDust(group) {
 
   // each thread is a thin quad (start and end, either side), so it can be
   // drawn a pixel wide with a soft edge instead of as an aliased GL line
-  const origin = [], colour = [], dir = [], seed = [], pose = [], corner = [], index = [];
+  const origin = [], colour = [], dir = [], seed = [], twinkle = [], pose = [], corner = [], index = [];
   // a subject over its own picture: the threads leave from the picture's edge
   // (the frame stretched on past itself), never as lines drawn across it
   const frame = Array.isArray(group.userData.dustFrame) && group.userData.dustFrame.length === 4 ? group.userData.dustFrame : null;
@@ -160,12 +166,15 @@ export async function buildDust(group) {
         if (t.d[1] < 0) t.p[1] = Math.min(t.p[1], frame[1]);
       }
       const s = [Math.random(), Math.random()];
+      // the thread's own twinkle: shimmer phase, shimmer rate, glint clock
+      const tw = [Math.random() * 6.2832, 0.5 + Math.random() * 0.8, Math.random()];
       const base = origin.length / 3;
       for (const [e, side] of [[0, -1], [0, 1], [1, -1], [1, 1]]) {
         origin.push(...t.p);
         colour.push(...t.c);
         dir.push(...t.d);
         seed.push(...s);
+        twinkle.push(...tw);
         pose.push(P.order);
         corner.push(e, side);
       }
@@ -188,12 +197,15 @@ export async function buildDust(group) {
     // the drawing buffer in pixels, and the line width in pixels
     uView: { value: new THREE.Vector2(1, 1) },
     uPixel: { value: 1 },
+    // 1: the threads twinkle; 0 (reduced motion): they hold still
+    uTwinkle: { value: STILL ? 0 : 1 },
   };
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(origin, 3));
   geometry.setAttribute("aColour", new THREE.Float32BufferAttribute(colour, 3));
   geometry.setAttribute("aDir", new THREE.Float32BufferAttribute(dir, 2));
   geometry.setAttribute("aSeed", new THREE.Float32BufferAttribute(seed, 2));
+  geometry.setAttribute("aTwinkle", new THREE.Float32BufferAttribute(twinkle, 3));
   geometry.setAttribute("aPose", new THREE.Float32BufferAttribute(pose, 1));
   geometry.setAttribute("aCorner", new THREE.Float32BufferAttribute(corner, 2));
   geometry.setIndex(index);
@@ -204,15 +216,16 @@ export async function buildDust(group) {
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     vertexShader: /* glsl */ `
-      attribute vec3 aColour;
+      attribute vec3 aColour, aTwinkle;
       attribute vec2 aDir, aSeed, aCorner;
       attribute float aPose;
       uniform mat4 uGroup;
       uniform vec2 uCentre, uView;
       uniform float uHalf, uHead, uKeep, uReach, uPixel;
-      varying vec3 vC;
+      varying vec3 vC, vTw;
       varying float vLive, vAlong, vLen, vAcross, vSeed;
       void main() {
+        vTw = aTwinkle;
         vec4 w0 = uGroup * vec4(position, 1.0);
         // most run out before the room's wall, some on to it, so their ends
         // are spread and soft rather than one ruled edge
@@ -243,8 +256,8 @@ export async function buildDust(group) {
       }
     `,
     fragmentShader: /* glsl */ `
-      uniform float uTime, uAlpha, uPixel;
-      varying vec3 vC;
+      uniform float uTime, uAlpha, uPixel, uTwinkle;
+      varying vec3 vC, vTw;
       varying float vLive, vAlong, vLen, vAcross, vSeed;
       void main() {
         if (vLive <= 0.002) discard;
@@ -256,9 +269,25 @@ export async function buildDust(group) {
         float fade = smoothstep(0.0, 0.08, s) * (0.15 + 0.85 * exp(-s / 3.0)) * (1.0 - smoothstep(0.45, 1.0, vAlong));
         // most threads faint, a few bright: a sheen, not a ruled sheet
         float strength = 0.25 + 0.75 * pow(fract(vSeed * 7.31), 1.5);
-        float breathe = 0.86 + 0.14 * sin(uTime * 0.35 + vSeed * 40.0);
-        float a = cover * vLive * fade * breathe * strength * uAlpha;
-        gl_FragColor = vec4(vC * a, 1.0);
+        // shimmer: two slow waves on the thread's own phase and rate, squared
+        // so it rests a little dim and lifts briefly, each thread out of step
+        float w = 0.5 + 0.3 * sin(uTime * vTw.y + vTw.x) + 0.2 * sin(uTime * vTw.y * 1.73 + vTw.x * 2.3);
+        float shimmer = mix(0.9, 0.62 + 0.75 * w * w, uTwinkle);
+        float a = cover * vLive * fade * shimmer * strength * uAlpha;
+        // now and then (about half of a thread's 6 to 14 s turns) a glint runs
+        // out along it from the subject: a sharp front and a short fading tail.
+        // It moves only along the thread, so it keeps to the lattice's axes
+        float period = 6.0 + 8.0 * fract(vTw.z * 17.0);
+        float clock = uTime / period + vTw.z;
+        float turn = floor(clock);
+        float lit = step(0.5, fract(sin(turn * 12.9898 + vTw.z * 78.233) * 43758.5453));
+        float head = fract(clock) * period * (2.6 + 2.4 * fract(vTw.z * 31.0));
+        float d = head - s;
+        float glint = d < 0.0 ? exp(-d * d * 60.0) : exp(-d * 1.7);
+        glint *= lit * uTwinkle * smoothstep(0.0, 0.15, s) * (1.0 - smoothstep(0.7, 1.0, vAlong))
+          * (0.35 + 0.65 * exp(-s / 4.0)) * (0.45 + 0.55 * strength);
+        float g = cover * vLive * uAlpha * glint * 0.95;
+        gl_FragColor = vec4(vC * a + mix(vC, vec3(1.0, 0.94, 0.82), 0.5) * g, 1.0);
       }
     `,
   }));

@@ -1024,6 +1024,46 @@ export function trailFrames(scans, picked, timestamps, { total = TRAIL_TOTAL, pe
   return out;
 }
 
+// Stride trail: the usable tracked frames (the live tail's rule) taken every
+// `stride` source frames from the first (0, 5, 10 ...), the stride widened
+// evenly until at most `max` remain. Returns kept-frame indices in time order.
+export const STRIDE = 3, STRIDE_MAX = 40, STRIDE_ANCHORS = 8;
+export function strideCards(scans, src, stride = STRIDE, max = STRIDE_MAX) {
+  if (!Array.isArray(scans) || scans.length < 2) return { stride, cards: [] };
+  const solids = scans.map((s) => s.solid).sort((a, b) => a - b);
+  const medSolid = solids[Math.floor(solids.length / 2)] || 0;
+  const closeup = scans.filter((s) => s.touch > LIVE_TOUCH_T).length / scans.length >= 0.8;
+  const usable = scans.map((_, i) => i).filter((i) => scans[i].solid >= 0.4 * medSolid && (closeup || scans[i].touch <= LIVE_TOUCH_T));
+  const pool = usable.length >= 2 ? usable : scans.map((_, i) => i);
+  for (let s = Math.max(1, Math.round(stride)); ; s += 1) {
+    // the tracked frame nearest each target source frame (the SAM cut may
+    // itself be strided, so 5 can land between two tracked frames)
+    const cards = [];
+    const first = src[pool[0]], last = src[pool[pool.length - 1]];
+    let j = 0;
+    for (let t = first; t <= last + s / 2; t += s) {
+      while (j + 1 < pool.length && Math.abs(src[pool[j + 1]] - t) < Math.abs(src[pool[j]] - t)) j += 1;
+      if (!cards.includes(pool[j])) cards.push(pool[j]);
+    }
+    if (cards.length <= max || s > 10000) return { stride: s, cards };
+  }
+}
+// The stride cards between the poses, placed on the row by time
+// ({index, at} as trailFrames returns).
+export function strideTrail(cards, picked, timestamps) {
+  const out = [];
+  for (let g = 0; g + 1 < picked.length; g += 1) {
+    const a = picked[g], b = picked[g + 1];
+    const ta = Number(timestamps[a]), tb = Number(timestamps[b]);
+    if (!(tb > ta)) continue;
+    for (const i of cards) {
+      const t = Number(timestamps[i]);
+      if (i > a && i < b && t > ta && t < tb) out.push({ index: i, at: g + (t - ta) / (tb - ta) });
+    }
+  }
+  return out;
+}
+
 // Grid for `n` cells of cellW x cellH: the column count with the smallest
 // texture side, and the cell scale that keeps that side under `maxSide`.
 export const ATLAS_MAX_SIDE = 2048;
@@ -1098,6 +1138,10 @@ export async function packChronoAtlas(slices, {
   edgeRing = EDGE_RING,
   // Ghost-trail frames on the row, poses included (0 = no trail): trailFrames.
   trail = TRAIL_TOTAL,
+  // Stride trail (> 0): every `poseStride`-th source frame of the tracked
+  // span becomes a card (strideCards), at most `strideMax` (a long clip
+  // widens the stride evenly); `strideAnchors` of them are the poses.
+  poseStride = 0, strideMax = STRIDE_MAX, strideAnchors = STRIDE_ANCHORS,
 } = {}) {
   if (!slices.length) throw new Error("No tracked frames to pack.");
   // One decode per slice: coverage, alpha box, pose stats, in-box fill and
@@ -1149,13 +1193,16 @@ export async function packChronoAtlas(slices, {
   maxY = Math.min(srcH - 1, maxY + pad);
 
   const stats = keptScans.map((r) => r.stats);
-  let picked = selectPoses(stats, {
+  const stride = poseStride > 0 ? strideCards(keptScans, keptAll.map((s, i) => (Number.isFinite(Number(s.sourceFrameIndex)) ? Number(s.sourceFrameIndex) : i)), poseStride, strideMax) : null;
+  let picked = stride && stride.cards.length >= 2 ? evenSubsample(stride.cards, Math.min(strideAnchors, stride.cards.length)) : selectPoses(stats, {
     max: maxPoses,
     timestamps: keptAll.map((s) => s.timestamp),
   });
   // Cap by rendered size, not count: thin the line until visible subjects
   // clear ~14% canvas height wide. First/last kept, time order preserved.
-  {
+  // (A stride trail keeps every card: the row overlaps them instead.)
+  const strided = Boolean(stride && stride.cards.length >= 2);
+  if (!strided) {
     const tsAll = keptAll.map((s) => s.timestamp);
     const dims = picked.map((i) => boxes[i]);
     const med = (vals) => [...vals].sort((a, b) => a - b)[Math.floor(vals.length / 2)];
@@ -1167,7 +1214,7 @@ export async function packChronoAtlas(slices, {
       coverage: fills.length ? fills[Math.floor(fills.length / 2)] : 1,
     });
   }
-  picked = dropFarPoses(picked, boxes, cell);
+  if (!strided) picked = dropFarPoses(picked, boxes, cell);
   // Motion gate data: mean pairwise travel+appearance over the picked set.
   // A static subject either becomes a living still (staticStill) or is
   // reported for the caller to fail (a still mug would otherwise render as
@@ -1182,7 +1229,8 @@ export async function packChronoAtlas(slices, {
   // median area) — the clip's last frames are often the subject leaving,
   // and those used to loop on the most prominent pose as a truncated blob.
   const tailIdx = still ? stillLoop(keptScans, picked[0], 15) : liveTail(keptScans, picked, liveCount);
-  const trailSel = still || !(trail > 0) ? [] : trailFrames(keptScans, picked, keptAll.map((s) => s.timestamp), { total: trail });
+  const trailSel = still ? [] : strided ? strideTrail(stride.cards, picked, keptAll.map((s) => s.timestamp))
+    : !(trail > 0) ? [] : trailFrames(keptScans, picked, keptAll.map((s) => s.timestamp), { total: trail });
 
   const medianOf = (vals) => [...vals].sort((a, b) => a - b)[Math.floor(vals.length / 2)];
   const selBoxes = picked.map((i) => boxes[i]);
@@ -1289,6 +1337,7 @@ export async function packChronoAtlas(slices, {
     bottom: trailSel.map((s) => r4(cellAnchors[order.indexOf(s.index)].bottom)),
     fit: trailSel.map((s) => r4(cellFit[order.indexOf(s.index)])),
     poseFit: picked.map((_, n) => r4(cellFit[n])),
+    ...(strided ? { stride: stride.stride } : {}),
   } : null;
   // Dark-subject flag: median picked luminance below the floor. The viewer
   // lifts its brightness FLOOR (chroma-safe flat multiply) and the pack

@@ -14,10 +14,10 @@ test('initial HTML does not assert a producer before provenance resolves',async(
  assert.doesNotMatch(html,/SAM 3\.1 tracking|Muse Spark routing/);
 });
 test('real SAM and Spark source labels remain unchanged',()=>{
- assert.deepEqual(labels({provenance:['sam3-native','muse-spark-route'],camera:'fixed',category:'wildlife'}),['SAM 3.1 tracking','Muse Spark: fixed-wildlife']);
+ assert.deepEqual(labels({provenance:['sam3-native','muse-spark-route'],camera:'fixed',category:'wildlife'}),['SAM 3.1 tracking','Muse Spark: wildlife · fixed camera']);
 });
 test('real plate provenance remains distinct from tracking/routing',()=>{
- assert.deepEqual(labels({provenance:['sam3','muse-image-plate','muse-spark'],camera:'unknown',category:'other'}),['SAM 3.1 tracking','Muse Image plate','Muse Spark: routing']);
+ assert.deepEqual(labels({provenance:['sam3','muse-image-plate','muse-spark'],camera:'unknown',category:'other'}),['SAM 3.1 tracking','Muse Image plate','Muse Spark: clip check']);
 });
 test('explicit synthetic oracle never claims model inference, even with mixed stale model tags',()=>{
  for(const provenance of [['synthetic-gt-body-rgba','cg-0-oracle-packer'],['sam3','synthetic-gt-body-rgba','muse-spark']]) assert.deepEqual(labels({provenance}),['Synthetic ground truth','Consumer QA · no model inference']);

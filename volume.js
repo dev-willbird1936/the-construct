@@ -830,6 +830,9 @@ export const TRAIL_GAIN = 3, TRAIL_LIFT = 0.7, TRAIL_KNEE = 0.1;
 // fill that length. Below a plain row's 0.85, so the room fits each pose
 // about 1.25x larger.
 export const TRAIL_STEP = 0.65;
+// Stride trail (every 5th tracked frame): neighbouring cards start
+// STRIDE_GAP of a pose width apart, so they overlap as the frames do.
+export const STRIDE_GAP = 0.09;
 export const TRAIL_NEAR = 0.8, TRAIL_FAR = 0.15, TRAIL_GAMMA = 1;
 // Which trail frames join the poses on a strobe row of `n` cards: the
 // frames left over are shared among the gaps between poses (any remainder
@@ -945,14 +948,21 @@ export function buildChronoVolume(texture, meta, options = {}) {
     const gapW = (still ? STROBE_STILL_GAP : STROBE_GAP) * bodyW;
     const roomGapW = (still ? STROBE_STILL_GAP : STROBE_ROOM_GAP) * bodyW;
     const free = options.trailRow === "free";
-    const budget = (Number(options.trailStep) > 0 ? Number(options.trailStep) * poseW : stepW) * (count - 1);
-    const most = Math.min(still ? STROBE_STILL_COUNT : STROBE_COUNT, count + allTrail.length);
-    const n = Math.max(count, Math.min(most, free ? most : Math.round(budget / roomGapW) + 1));
+    // A stride trail (atlas.json trail.stride: every 5th tracked frame) shows
+    // every card, STRIDE_GAP of a pose width apart; a room row keeps the
+    // length fitChronoCell gave it (trailStep per card).
+    const strided = Number(meta.trail && meta.trail.stride) > 0;
+    const cardsAll = count + allTrail.length;
+    const budget = strided
+      ? (Number(options.trailStep) > 0 ? Number(options.trailStep) : STRIDE_GAP) * poseW * (cardsAll - 1)
+      : (Number(options.trailStep) > 0 ? Number(options.trailStep) * poseW : stepW) * (count - 1);
+    const most = strided ? cardsAll : Math.min(still ? STROBE_STILL_COUNT : STROBE_COUNT, cardsAll);
+    const n = strided ? cardsAll : Math.max(count, Math.min(most, free ? most : Math.round(budget / roomGapW) + 1));
     trail = strobeSelect(allTrail.map((g) => g.at), count, n).map((j) => allTrail[j]);
     const cards = [...Array.from({ length: count }, (_, i) => ({ key: i, at: i })), ...trail.map((g) => ({ g, at: g.at }))]
       .sort((a, b) => a.at - b.at);
     const uOf = new Map(cards.map((c, k) => [c.key !== undefined ? `k${c.key}` : c.g, cards.length > 1 ? k / (cards.length - 1) : 0.5]));
-    strobe = { rowLen: free ? (cards.length - 1) * gapW : budget, gapW, keyU: (i) => uOf.get(`k${i}`), ghostU: (g) => uOf.get(g) };
+    strobe = { rowLen: free && !strided ? (cards.length - 1) * gapW : budget, gapW, keyU: (i) => uOf.get(`k${i}`), ghostU: (g) => uOf.get(g) };
     if (!trail.length) trail = null;
   }
   const stamps = meta.timestamps && meta.timestamps.length === count
@@ -1137,7 +1147,7 @@ export function buildChronoVolume(texture, meta, options = {}) {
     ? { start: Number(meta.live.start) || 0, count: Number(meta.live.count) || 0 }
     : null;
   group.userData = {
-    chrono: true, map: texture, meta, depth, poseW, poseH: height,
+    chrono: true, map: texture, meta, depth, poseW, poseH: height, square: options.square === true,
     rowW: rowLen + poseW, rowLen, rowD: depth, count, groundY, shadows, ribbon, backdrop, live,
     liveMesh: null, cellUV, activeOrders: null, layoutMode: "row",
     trail: trail ? {

@@ -206,9 +206,14 @@ function fitSpecimen(aspect) {
 // is spaced by Lite's TRAIL_STEP (pose widths per pose; its trail cards fill
 // the row), so a smaller step there stands each pose larger here.
 function fitChronoCell(meta) {
-  const n = Math.max(1, meta.count || 1);
+  let n = Math.max(1, meta.count || 1);
   const trailStep = typeof Vol === "object" && Number(Vol.TRAIL_STEP) > 0 ? Number(Vol.TRAIL_STEP) : 0.85;
-  const s = Array.isArray(meta.trail?.cells) && meta.trail.cells.length ? trailStep : 0.85;
+  // A stride trail (every 5th tracked frame) lays out every card, each
+  // STRIDE_GAP of a pose width after the last, square to the room.
+  const strided = Number(meta.trail?.stride) > 0 && Array.isArray(meta.trail?.cells);
+  const strideGap = typeof Vol === "object" && Number(Vol.STRIDE_GAP) > 0 ? Number(Vol.STRIDE_GAP) : 0.09;
+  if (strided) n = Math.max(1, (meta.count || 1) + meta.trail.cells.length);
+  const s = strided ? strideGap : Array.isArray(meta.trail?.cells) && meta.trail.cells.length ? trailStep : 0.85;
   const aspect = meta.aspect || 1;
   let meanW = 1;
   if (Array.isArray(meta.anchors) && meta.anchors.length) {
@@ -224,7 +229,7 @@ function fitChronoCell(meta) {
   let height = Math.min(6.2, (OPEN * 0.92) / (aspect * (s * (n - 1) + meanW)));
   const fullWidth = height * aspect * (s * (n - 1) + 1);
   if (fullWidth > OPEN * 0.95) height *= OPEN * 0.95 / fullWidth;
-  return { height, step: 0.85, trailStep: s, depth: 4.6 };
+  return { height, step: 0.85, trailStep: s, depth: strided ? 1.2 : 4.6, square: strided };
 }
 const SPECIMEN_Z = 0;
 const REST_STANDOFF = 23.5;
@@ -240,6 +245,8 @@ const rowShare = (aspect) => (aspect >= 1 ? 0.56 : 0.95);
 function chronoRestYaw(group, aspect) {
   const u = group.userData;
   if (!(u?.rowLen > 0) || !(u.poseW > 0) || !(u.depth >= 0) || !(aspect > 0)) return YAW;
+  // a stride trail runs square to the room: parallel to its walls, side-on
+  if (u.square) return Math.atan2(u.depth, u.rowLen);
   const across = -Math.atan2(REST_EYE.x, REST_STANDOFF); // the floor direction the eye sees straight across
   const along = Math.atan2(u.depth, u.rowLen), len = Math.hypot(u.rowLen, u.depth);
   const room = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * aspect * (REST_STANDOFF - FOCUS_Z_MAX) * rowShare(aspect);
@@ -253,7 +260,7 @@ function focusZForChrono(group, aspect) {
   const yaw = Number.isFinite(u.restYaw) ? u.restYaw : YAW;
   const width = Math.abs(u.rowLen * Math.cos(yaw) + u.depth * Math.sin(yaw)) + u.poseW * Math.abs(Math.cos(yaw));
   if (!(width > 0.1)) return 0;
-  const target = rowShare(aspect);
+  const target = u.square ? Math.min(rowShare(aspect), 0.78) : rowShare(aspect);
   const distance = width / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * aspect * target);
   return Math.max(0, Math.min(FOCUS_Z_MAX, REST_STANDOFF - distance));
 }
@@ -1212,6 +1219,8 @@ function gradeChronoForConstruct(group, light = 1) {
 const chronoWant = new THREE.Vector3();
 function chronoCentre(group, cut, delta, out) {
   const u = group.userData;
+  // a square stride trail stays put, framed on the whole row, while scrubbed
+  if (u.square) return out.set(0, 0, 0);
   const head = Math.max(1, Math.round((u.count || 1) * cut)) - 1;
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
   for (const mesh of group.children) {
@@ -1702,6 +1711,14 @@ async function loadMe() {
   if (me) {
     $("#meLine").textContent = `signed in as ${me.email}`;
     $("#adminWrap").hidden = me.role !== "owner";
+    // paused result types leave the picker entirely
+    if (Array.isArray(me.tiers) && me.tiers.length) {
+      for (const input of document.querySelectorAll('input[name="tier"]')) {
+        if (me.tiers.includes(input.value)) continue;
+        if (input.checked) { const lite = document.querySelector('input[name="tier"][value="lite"]'); if (lite) lite.checked = true; }
+        input.closest("label")?.remove();
+      }
+    }
   }
   updateWorkerLine();
   syncAuthStep();
@@ -1915,7 +1932,7 @@ function renderRoute() {
       <div><dt>camera</dt><dd>${esc(r.camera || "unknown")}${camNote ? ` <span class="dim">· ${esc(camNote)}</span>` : ""}</dd></div>
       <div><dt>your result</dt><dd>${TIER_NAME[tier] || tier} · ${TIER_FORM[tier] || ""}</dd></div>
     </dl>
-    ${rec.tier ? `<p class="side-label">spark recommends</p><p class="microcopy rec-why"><b>${recName}</b> — ${esc(rec.why || "")}</p>` : ""}
+    ${rec.tier && document.querySelector(`input[name="tier"][value="${rec.tier}"]`) ? `<p class="side-label">spark recommends</p><p class="microcopy rec-why"><b>${recName}</b> — ${esc(rec.why || "")}</p>` : ""}
     ${kept ? `<p class="microcopy route-switched">Spark switched your result from ${TIER_NAME[kept]} to ${TIER_NAME[tier] || tier}.</p><button class="btn btn-quiet route-switch" type="button" data-switch-tier="${kept}">Keep ${TIER_NAME[kept]}: ${TIER_FORM[kept]}</button>` : ""}
     ${switchTo ? `<button class="btn btn-quiet route-switch" type="button" data-switch-tier="${switchTo}">Use ${recName} instead: ${TIER_FORM[switchTo]}</button>` : ""}
     ${!rec.tier && rec.why ? `<p class="microcopy">${esc(rec.why)}</p>` : ""}

@@ -408,17 +408,23 @@ function openViewer(meta, atlas, texture, backdropTex, composite, still) {
       const known = (v) => v && !["unknown", "other"].includes(v);
       const cam = known(m.camera) ? m.camera : "";
       const cat = known(m.category) ? m.category : "";
-      out.push(`Muse Spark: ${[cam, cat].filter(Boolean).join("-") || "routing"}`);
+      out.push(cat || cam ? `Muse Spark: ${[cat.replace(/-/g, " "), cam && `${cam} camera`].filter(Boolean).join(" · ")}` : "Muse Spark: clip check");
     }
     return out.length ? out : ["SAM 3.1 tracking", "Muse Spark routing"];
   };
+  // Product words, as the studio's buildTitle: "dry grass lite" reads "Dry grass · ghost trail".
+  const productTitle = (title) => {
+    const text = String(title || "").trim();
+    const m = text.match(/^(.+) (lite|basic|advanced)$/i);
+    return m ? `${m[1][0].toUpperCase()}${m[1].slice(1)} · ${{ lite: "ghost trail", basic: "cloud trail", advanced: "world" }[m[2].toLowerCase()]}` : text;
+  };
   if (meta) {
-    $("#vTitle").textContent = meta.title || "A spacetime solid";
+    $("#vTitle").textContent = productTitle(meta.title) || "A spacetime solid";
     const bits = [meta.subject, meta.durationSec ? `${meta.durationSec}s` : ""].filter(Boolean);
     if (bits.length) $("#vLede").textContent = bits.join(" · ");
     $("#vChips").innerHTML = chipsFor(meta.meta).map((c) => `<li>${esc(c)}</li>`).join("");
   }
-  document.title = `${meta?.title || "Lite solid"} — The Construct`;
+  document.title = `${productTitle(meta?.title) || "Lite solid"} — The Construct`;
   setCutUi(view.cutTarget, false);
 
   let last = performance.now();

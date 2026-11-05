@@ -191,7 +191,9 @@ export function signinPage({ next, providers, origin = "", ukOnly = false }) {
 <p class="hint">No email? Check your spam folder. Not invited yet? Ask the owner for access.</p>
 <label for="code">Code</label><input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" required>
 <button type="submit">Sign in</button><button class="quiet" type="button" id="back">Use a different email</button></form>` : `<p>Email sign-in is not available right now.</p>`;
-  const forms = FORMS.map(([key, tier, name, what, alt]) => `<li><img src="${L}form-${key}.webp" alt="${esc(alt)}" width="480" height="320" loading="lazy" decoding="async" onerror="this.style.visibility='hidden'"><small>${tier}</small><b>${name}</b><span>${what}</span></li>`).join("");
+  const onTiers = String(process.env.ENABLED_TIERS || "lite,basic,advanced").split(",").map((t) => t.trim());
+  const shownForms = FORMS.filter(([key]) => onTiers.includes({ ghost: "lite", cloud: "basic", world: "advanced" }[key]));
+  const forms = shownForms.map(([key, tier, name, what, alt]) => `<li><img src="${L}form-${key}.webp" alt="${esc(alt)}" width="480" height="320" loading="lazy" decoding="async" onerror="this.style.visibility='hidden'"><small>${tier}</small><b>${name}</b><span>${what}</span></li>`).join("");
   const body = `<div class="stage" aria-hidden="true"><video id="hero" muted loop playsinline disablepictureinpicture preload="none" tabindex="-1"></video></div>
 <div class="shade" aria-hidden="true"></div>
 <header class="hud"><div class="mark"><span class="glyph" aria-hidden="true"></span><span class="word">THE CONSTRUCT<em>a video is a solid</em></span></div>
@@ -208,8 +210,9 @@ ${oauth ? `${SSO_CSS}<div class="or">or</div><div class="social" id="social-sign
 <p>If you upload a clip, its frames are sent to Meta&rsquo;s Model API in standard mode &mdash; not used for training. Clips, builds and usage records are stored to provide the service.</p>
 <p>Unpublished builds are not shown in the shared gallery. Publishing shows them to other signed-in users only after owner approval. Delete builds from My builds.</p>
 <p>For access, correction or deletion requests, use the operator address in your sign-in email. Read the full <a href="/terms.html" target="_blank" rel="noopener">Terms &amp; privacy</a>.</p></details></section></div>
-<section class="forms" aria-label="Three things it builds"><p class="kicker">Three things it builds from one clip</p><ul>${forms}</ul></section>
-<p class="credits">Shown: <i>Black Cat walking</i> by Dzkouslavia, CC0 (the moving clip and first card); <i>European roe deer in Slovakia</i> by The Nature Box, CC BY 3.0; <i>Squirrel eating nut</i> by Anton Porsche, CC BY 4.0; all via Wikimedia Commons. Each was built by this site's own pipeline.</p>
+${shownForms.length === 3 ? `<section class="forms" aria-label="Three things it builds"><p class="kicker">Three things it builds from one clip</p><ul>${forms}</ul></section>
+<p class="credits">Shown: <i>Black Cat walking</i> by Dzkouslavia, CC0 (the moving clip and first card); <i>European roe deer in Slovakia</i> by The Nature Box, CC BY 3.0; <i>Squirrel eating nut</i> by Anton Porsche, CC BY 4.0; all via Wikimedia Commons. Each was built by this site's own pipeline.</p>` : `<section class="forms" aria-label="What it builds"><p class="kicker">What it builds from one clip</p><ul>${forms}</ul></section>
+<p class="credits">Shown: <i>Black Cat walking</i> by Dzkouslavia, CC0, via Wikimedia Commons. Built by this site's own pipeline.</p>`}
 </main>`;
   const script = `${POST_HELPER}
 const next=${JSON.stringify(next).replaceAll("<", "\\u003c")};const $=(i)=>document.getElementById(i);const st=$("status");

@@ -4,6 +4,8 @@
 
 **Live:** https://www.thefourthtesseract.com
 
+For judging, the live site runs the **Lite** form (the ghost trail) only. The other forms (Basic and Advanced) are in this code but paused on the live site.
+
 ## How it uses Meta AI
 
 | Step | Meta AI model | What it does |

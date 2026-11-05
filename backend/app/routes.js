@@ -131,6 +131,7 @@ export function buildApi({ db, config, dataDir, runners, detectFn, boxDetectFn, 
       worker: workerStatus(db, config),
       maintenance: killed(db, config),
       live: liveAvailable(),   // this server can run Advanced in front of the user (a GPU and the world builder are here)
+      tiers: config.enabledTiers || ["lite", "basic", "advanced"],
     });
   });
 
@@ -353,6 +354,9 @@ export function buildApi({ db, config, dataDir, runners, detectFn, boxDetectFn, 
       const { tier } = req.body || {};
       if (!["lite", "basic", "advanced"].includes(tier)) {
         return res.status(400).json({ error: "Choose tier lite, basic or advanced." });
+      }
+      if (config.enabledTiers && !config.enabledTiers.includes(tier)) {
+        return res.status(409).json({ error: "That result type is paused for now. Choose Lite (ghost trail)." });
       }
       const upload = resolveUpload(req, res);
       if (!upload) return;
